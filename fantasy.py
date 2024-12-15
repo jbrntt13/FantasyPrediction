@@ -24,7 +24,7 @@ app = Flask(__name__)
 CORS(app)
 
 standard_point_deviation = 75
-
+time_decay = 0.5
 
 @app.route("/date")
 def hello_world():
@@ -103,9 +103,9 @@ def currentOdds():
         home_team_name = boxscore.home_team.team_name
         away_team_name = boxscore.away_team.team_name
 
-        home_team_projected_points = teamProjectScore(boxscore.home_lineup, boxscore.home_team.team_name, nbaDATA,
+        home_team_projected_points, homeFirstGame, homeLastGame = teamProjectScore(boxscore.home_lineup, boxscore.home_team.team_name, nbaDATA,
                                                       datetime.now().date())
-        away_team_projected_points = teamProjectScore(boxscore.away_lineup, boxscore.away_team.team_name, nbaDATA,
+        away_team_projected_points, homeFirstGame, awayLastGame = teamProjectScore(boxscore.away_lineup, boxscore.away_team.team_name, nbaDATA,
                                                       datetime.now().date())
 
         chanceHome, chanceAway = simplePrediction(home_team_projected_points, away_team_projected_points)
@@ -139,17 +139,24 @@ def projectedPoints(home_team: Team, away_team: Team):
     return round(home_team_projected_points), round(away_team_projected_points)
 
 
-def simplePrediction(home_team: int, away_team: int):
+def simplePrediction(home_team: int, away_team: int, homeFirstGame: int, homelastGame: int, awayFirstGame: int, awayLastGame: int):
     difference = abs(home_team - away_team)  # difference between the two teams
     std_dev_diff = (standard_point_deviation ** 2 + standard_point_deviation ** 2) ** 0.5
     z_score = (0 - difference) / std_dev_diff
     probability_away_team_wins = stats.norm.cdf(z_score)
     probability_home_team_wins = 1 - probability_away_team_wins
-    #print(home_team, away_team, probability_home_team_wins, probability_away_team_wins)
-    #return probability_home_team_wins, probability_away_team_wins
+    # We need to figure when this "day" is starting and ending
+    firstGame = min(homeFirstGame, homelastGame, awayFirstGame, awayLastGame)
+    lastGame = max(homeFirstGame, homelastGame, awayFirstGame, awayLastGame)
+    time_remaining = calculateTimeRemaining(firstGame, lastGame)
+    time_adjustment = 1 + (1 - time_remaining) ** 2 * 0.5  # Exponential decay so the effects are muted until the end
     if home_team > away_team:
+        probability_home_team_wins *= time_adjustment
+        probability_away_team_wins = 1 - probability_home_team_wins
         return probability_home_team_wins, probability_away_team_wins
     else:
+        probability_away_team_wins *= time_adjustment
+        probability_home_team_wins = 1 - probability_away_team_wins
         return probability_away_team_wins, probability_home_team_wins
 
 
@@ -193,10 +200,17 @@ def get_current_game_clock(proTeam: str, response: dict):
 
 def teamProjectScore(team: list, team_name: str, response: dict, gameDay: date):
     team_projected_points = 0
+    lastGame = 0
+    firstGame = 0
     box_scores = league.box_scores(matchup_total=False)
     for player in team:
         if player.lineupSlot != 'BE' and player.lineupSlot != 'IR' and player.injured != True:
             if is_game_today(player.schedule):
+                gameStart = get_game_start_time(player.schedule)
+                if(gameStart > lastGame):
+                    lastGame = get_game_start_time(player.schedule)
+                if(gameStart < firstGame):
+                    firstGame = get_game_start_time(player.schedule)
                 #get players current points
                 applied_total = player.points
 
@@ -218,7 +232,7 @@ def teamProjectScore(team: list, team_name: str, response: dict, gameDay: date):
                     projected_points = playerPPM * (48 - currentMinute)
                     team_projected_points += projected_points
                     #add that to the total
-    return round(team_projected_points)
+    return round(team_projected_points), gameStart
 
 
 def scoreboard(week: int = None) -> List[Matchup]:
@@ -241,7 +255,25 @@ def is_game_today(schedule: dict) -> bool:
             return True
     return False
 
+# I'm not pleased with these two functions being separate but finding the best way to combine them isn't my top
+# priority right now
+def get_game_start_time(schedule: dict) -> int:
+    today = datetime.now().date()
+    for game in schedule.values():
+        if game['date'].date() == today:
+            return game['date'].time().hour
+    return 0
 
+
+def calculateTimeRemaining(firstGame: int, lastGame: int):
+    firstGame = 16
+    lastGame = 21
+    currentTime = datetime.now().hour
+    if (currentTime < firstGame):
+        return 1
+    if (currentTime > lastGame):
+        return 0
+    return 1 - (currentTime - firstGame) / (lastGame - firstGame)
 def is_game_on_date(schedule: dict, gameDay: date) -> bool:
     for game in schedule.values():
         if game['date'].date() == gameDay:
