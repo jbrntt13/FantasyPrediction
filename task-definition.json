@@ -1,0 +1,21 @@
+{
+  "family": "flask-api-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::425140822609:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "flask-api",
+      "image": "425140822609.dkr.ecr.us-east-1.amazonaws.com/flask-api:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5000,
+          "hostPort": 5000
+        }
+      ]
+    }
+  ]
+}
