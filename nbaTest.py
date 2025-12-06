@@ -18,6 +18,24 @@ team_name_mapping = {
     'SAS': 'San Antonio Spurs', 'TOR': 'Toronto Raptors', 'UTA': 'Utah Jazz', 'WAS': 'Washington Wizards'
 }
 
+TEAM_CODE_CANON = {
+    "PHX": "PHX",
+    "PHO": "PHX",   # collapse PHO → PHX
+    "NOP": "NOP",
+    "NO": "NOP",
+    "NOK": "NOP",
+    "GS": "GSW",
+    "GSW": "GSW",
+    "SA": "SAS",
+    "SAS": "SAS",
+    # add more aliases here if you bump into them
+}
+
+def canonical_team(code: str | None) -> str | None:
+    if code is None:
+        return None
+    return TEAM_CODE_CANON.get(code.upper(), code.upper())
+
 
 def fetch_nba_live_games():
     url = "https://api-nba-v1.p.rapidapi.com/games"
@@ -56,7 +74,6 @@ SCHEDULE_DATA = fetch_nba_schedule()
 
 
 def teams_playing_on(game_day: date, schedule: dict = None) -> Set[str]:
-
     """
     Return a set of team tricodes (e.g. 'MEM', 'LAL') that have a game on game_day.
     game_day is a datetime.date.
@@ -64,18 +81,16 @@ def teams_playing_on(game_day: date, schedule: dict = None) -> Set[str]:
     if schedule is None:
         schedule = SCHEDULE_DATA
 
-    playing = set()
+    playing: Set[str] = set()
     league_sched = schedule.get("leagueSchedule", {})
 
     for date_bucket in league_sched.get("gameDates", []):
         for game in date_bucket.get("games", []):
-            # Example: "2025-10-02T04:00:00Z"
             game_utc = game.get("gameDateUTC")
             if not game_utc:
                 continue
 
             try:
-                # strip Z, parse as ISO, take the date portion
                 game_date = datetime.fromisoformat(
                     game_utc.replace("Z", "+00:00")
                 ).date()
@@ -88,24 +103,23 @@ def teams_playing_on(game_day: date, schedule: dict = None) -> Set[str]:
             home = game.get("homeTeam", {})
             away = game.get("awayTeam", {})
 
-            home_tri = home.get("teamTricode")
-            away_tri = away.get("teamTricode")
+            home_tri = canonical_team(home.get("teamTricode"))
+            away_tri = canonical_team(away.get("teamTricode"))
 
             if home_tri:
-                playing.add(home_tri.upper())
+                playing.add(home_tri)
             if away_tri:
-                playing.add(away_tri.upper())
+                playing.add(away_tri)
 
     return playing
 
 
-def is_team_playing_on(pro_team: str, game_day: date, schedule: dict = None) -> bool:
-    """
-    Convenience: is this pro_team (tricode) playing on game_day?
-    """
-    if not pro_team:
+def is_team_playing_on(team: str | None, game_day: date, schedule: dict = None) -> bool:
+    team_can = canonical_team(team)
+    if team_can is None:
         return False
-    return pro_team.upper() in teams_playing_on(game_day, schedule)
+    return team_can in teams_playing_on(game_day, schedule)
+
 
 
 # Example usage

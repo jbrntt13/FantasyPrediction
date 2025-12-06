@@ -1,9 +1,18 @@
 # nba_integration.py
+import unicodedata
+from nba_api.stats.static import players as nba_players
 
 from nba_api.stats.static import players as static_players
 from nba_api.stats.endpoints import playergamelog
 import pandas as pd
 from datetime import datetime, timedelta, date
+
+NAME_ALIASES = {
+    # Memes or ESPN misspellings
+    "Kristaps Perzingus Tingus Pingus": "Kristaps Porzingis",
+    "Nikola Vuvecic": "Nikola Vucevic",
+}
+
 
 def current_nba_season_str() -> str:
     """
@@ -118,26 +127,74 @@ def calc_fantasy_points_from_row(row) -> float:
     return total
 
 
-def find_nba_player_id(full_name: str):
-    """
-    Look up an NBA.com player ID by full name using nba_api's static players list.
-    Returns the ID (int) or None if not found.
-    """
-    all_players = static_players.get_players()  # list of dicts
-    full_name_lower = full_name.lower()
+def strip_accents(s: str) -> str:
+    if not s:
+        return ""
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", s)
+        if not unicodedata.combining(c)
+    )
 
-    # Exact full-name match first
-    for p in all_players:
-        if p["full_name"].lower() == full_name_lower:
+
+def clean_name(name: str) -> str:
+    return strip_accents(name).lower().strip()
+
+
+def find_nba_player_id(name: str) -> int | None:
+    """
+    Find the NBA player_id from a possibly messy ESPN name.
+    Handles accents, memes, spacing issues, partial matches.
+    """
+    if not name:
+        return None
+
+    # Apply alias (for memes like Tingus Pingus, typos, etc)
+    canonical = NAME_ALIASES.get(name, name)
+    target_clean = clean_name(canonical)
+
+    players_list = nba_players.get_players()
+
+    # ---- 0) Try nba_api's built-in full-name search first ----
+    # This often handles straightforward cases like "Santi Aldama" directly.
+    hits = nba_players.find_players_by_full_name(canonical)
+    if hits:
+        # If exactly one, just use it
+        if len(hits) == 1:
+            return hits[0]["id"]
+        # Otherwise try to pick the best cleaned-name match
+        for h in hits:
+            if clean_name(h["full_name"]) == target_clean:
+                return h["id"]
+        # Fallback: first hit
+        return hits[0]["id"]
+
+    # ---- 1) Exact cleaned full-name match ----
+    for p in players_list:
+        full_clean = clean_name(p["full_name"])
+        if full_clean == target_clean:
             return p["id"]
 
-    # Fallback: loose match (in case ESPN name formatting is slightly different)
-    for p in all_players:
-        if full_name_lower in p["full_name"].lower():
+    # ---- 2) Startswith match (handles slight truncations) ----
+    for p in players_list:
+        full_clean = clean_name(p["full_name"])
+        if full_clean.startswith(target_clean) or target_clean.startswith(full_clean):
+            return p["id"]
+
+    # ---- 3) Token overlap (e.g. first/last swapped or partials) ----
+    t_tokens = target_clean.split()
+    for p in players_list:
+        full_clean = clean_name(p["full_name"])
+        f_tokens = full_clean.split()
+        if any(t in f_tokens for t in t_tokens):
+            return p["id"]
+
+    # ---- 4) Final fuzzy substring fallback ----
+    for p in players_list:
+        full_clean = clean_name(p["full_name"])
+        if target_clean in full_clean or full_clean in target_clean:
             return p["id"]
 
     return None
-
 
 def get_nba_game_logs(nba_player_id: int, season: str = "2025-26") -> pd.DataFrame:
     gl = playergamelog.PlayerGameLog(

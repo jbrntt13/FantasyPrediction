@@ -12925,5 +12925,806 @@
         "game_id": "0022500086"
       }
     ]
+  },
+  "6478": {
+    "espn_player_id": 6478,
+    "nba_player_id": 202696,
+    "name": "Nikola Vucevic",
+    "proTeam": "CHI",
+    "season": "2025-26",
+    "history": [
+      {
+        "date": "2025-12-03",
+        "fantasy_points": 40.0,
+        "opponent": "CHI vs. BKN",
+        "game_id": "0022500329"
+      },
+      {
+        "date": "2025-12-01",
+        "fantasy_points": 68.0,
+        "opponent": "CHI @ ORL",
+        "game_id": "0022500314"
+      },
+      {
+        "date": "2025-11-29",
+        "fantasy_points": 52.0,
+        "opponent": "CHI @ IND",
+        "game_id": "0022500295"
+      },
+      {
+        "date": "2025-11-28",
+        "fantasy_points": 51.0,
+        "opponent": "CHI @ CHA",
+        "game_id": "0022500071"
+      },
+      {
+        "date": "2025-11-22",
+        "fantasy_points": 74.0,
+        "opponent": "CHI vs. WAS",
+        "game_id": "0022500271"
+      },
+      {
+        "date": "2025-11-21",
+        "fantasy_points": 18.0,
+        "opponent": "CHI vs. MIA",
+        "game_id": "0022500051"
+      },
+      {
+        "date": "2025-11-19",
+        "fantasy_points": 68.0,
+        "opponent": "CHI @ POR",
+        "game_id": "0022500263"
+      },
+      {
+        "date": "2025-11-17",
+        "fantasy_points": 39.0,
+        "opponent": "CHI @ DEN",
+        "game_id": "0022500248"
+      },
+      {
+        "date": "2025-11-16",
+        "fantasy_points": 73.0,
+        "opponent": "CHI @ UTA",
+        "game_id": "0022500240"
+      },
+      {
+        "date": "2025-11-12",
+        "fantasy_points": 18.0,
+        "opponent": "CHI @ DET",
+        "game_id": "0022500214"
+      },
+      {
+        "date": "2025-11-10",
+        "fantasy_points": 38.0,
+        "opponent": "CHI vs. SAS",
+        "game_id": "0022500202"
+      },
+      {
+        "date": "2025-11-08",
+        "fantasy_points": 33.0,
+        "opponent": "CHI @ CLE",
+        "game_id": "0022500186"
+      },
+      {
+        "date": "2025-11-07",
+        "fantasy_points": 40.0,
+        "opponent": "CHI @ MIL",
+        "game_id": "0022500035"
+      },
+      {
+        "date": "2025-11-04",
+        "fantasy_points": 57.0,
+        "opponent": "CHI vs. PHI",
+        "game_id": "0022500167"
+      },
+      {
+        "date": "2025-11-02",
+        "fantasy_points": 57.0,
+        "opponent": "CHI @ NYK",
+        "game_id": "0022500153"
+      },
+      {
+        "date": "2025-10-31",
+        "fantasy_points": 56.0,
+        "opponent": "CHI vs. NYK",
+        "game_id": "0022500023"
+      },
+      {
+        "date": "2025-10-29",
+        "fantasy_points": 61.0,
+        "opponent": "CHI vs. SAC",
+        "game_id": "0022500132"
+      },
+      {
+        "date": "2025-10-27",
+        "fantasy_points": 74.0,
+        "opponent": "CHI vs. ATL",
+        "game_id": "0022500115"
+      },
+      {
+        "date": "2025-10-25",
+        "fantasy_points": 34.0,
+        "opponent": "CHI @ ORL",
+        "game_id": "0022500100"
+      },
+      {
+        "date": "2025-10-22",
+        "fantasy_points": 79.0,
+        "opponent": "CHI vs. DET",
+        "game_id": "0022500084"
+      }
+    ]
+  },
+  "3112335": {
+    "espn_player_id": 3112335,
+    "nba_player_id": 203999,
+    "name": "Nikola Jokic",
+    "proTeam": "DEN",
+    "season": "2025-26",
+    "history": [
+      {
+        "date": "2025-12-03",
+        "fantasy_points": 78.0,
+        "opponent": "DEN @ IND",
+        "game_id": "0022500325"
+      },
+      {
+        "date": "2025-12-01",
+        "fantasy_points": 118.0,
+        "opponent": "DEN vs. DAL",
+        "game_id": "0022500315"
+      },
+      {
+        "date": "2025-11-29",
+        "fantasy_points": 65.0,
+        "opponent": "DEN @ PHX",
+        "game_id": "0022500299"
+      },
+      {
+        "date": "2025-11-28",
+        "fantasy_points": 68.0,
+        "opponent": "DEN vs. SAS",
+        "game_id": "0022500076"
+      },
+      {
+        "date": "2025-11-24",
+        "fantasy_points": 86.0,
+        "opponent": "DEN @ MEM",
+        "game_id": "0022500287"
+      },
+      {
+        "date": "2025-11-22",
+        "fantasy_points": 106.0,
+        "opponent": "DEN vs. SAC",
+        "game_id": "0022500274"
+      },
+      {
+        "date": "2025-11-21",
+        "fantasy_points": 99.0,
+        "opponent": "DEN @ HOU",
+        "game_id": "0022500054"
+      },
+      {
+        "date": "2025-11-19",
+        "fantasy_points": 79.0,
+        "opponent": "DEN @ NOP",
+        "game_id": "0022500260"
+      },
+      {
+        "date": "2025-11-17",
+        "fantasy_points": 125.0,
+        "opponent": "DEN vs. CHI",
+        "game_id": "0022500248"
+      },
+      {
+        "date": "2025-11-15",
+        "fantasy_points": 93.0,
+        "opponent": "DEN @ MIN",
+        "game_id": "0022500232"
+      },
+      {
+        "date": "2025-11-12",
+        "fantasy_points": 127.0,
+        "opponent": "DEN @ LAC",
+        "game_id": "0022500224"
+      },
+      {
+        "date": "2025-11-11",
+        "fantasy_points": 103.0,
+        "opponent": "DEN @ SAC",
+        "game_id": "0022500212"
+      },
+      {
+        "date": "2025-11-08",
+        "fantasy_points": 95.0,
+        "opponent": "DEN vs. IND",
+        "game_id": "0022500189"
+      },
+      {
+        "date": "2025-11-07",
+        "fantasy_points": 81.0,
+        "opponent": "DEN vs. GSW",
+        "game_id": "0022500037"
+      },
+      {
+        "date": "2025-11-05",
+        "fantasy_points": 124.0,
+        "opponent": "DEN vs. MIA",
+        "game_id": "0022500178"
+      },
+      {
+        "date": "2025-11-03",
+        "fantasy_points": 127.0,
+        "opponent": "DEN vs. SAC",
+        "game_id": "0022500162"
+      },
+      {
+        "date": "2025-10-31",
+        "fantasy_points": 78.0,
+        "opponent": "DEN @ POR",
+        "game_id": "0022500026"
+      },
+      {
+        "date": "2025-10-29",
+        "fantasy_points": 91.0,
+        "opponent": "DEN vs. NOP",
+        "game_id": "0022500134"
+      },
+      {
+        "date": "2025-10-27",
+        "fantasy_points": 101.0,
+        "opponent": "DEN @ MIN",
+        "game_id": "0022500008"
+      },
+      {
+        "date": "2025-10-25",
+        "fantasy_points": 83.0,
+        "opponent": "DEN vs. PHX",
+        "game_id": "0022500104"
+      },
+      {
+        "date": "2025-10-23",
+        "fantasy_points": 88.0,
+        "opponent": "DEN @ GSW",
+        "game_id": "0022500006"
+      }
+    ]
+  },
+  "3945274": {
+    "espn_player_id": 3945274,
+    "nba_player_id": 1629029,
+    "name": "Luka Doncic",
+    "proTeam": "LAL",
+    "season": "2025-26",
+    "history": [
+      {
+        "date": "2025-12-01",
+        "fantasy_points": 79.0,
+        "opponent": "LAL vs. PHX",
+        "game_id": "0022500317"
+      },
+      {
+        "date": "2025-11-30",
+        "fantasy_points": 89.0,
+        "opponent": "LAL vs. NOP",
+        "game_id": "0022500308"
+      },
+      {
+        "date": "2025-11-28",
+        "fantasy_points": 87.0,
+        "opponent": "LAL vs. DAL",
+        "game_id": "0022500078"
+      },
+      {
+        "date": "2025-11-25",
+        "fantasy_points": 117.0,
+        "opponent": "LAL vs. LAC",
+        "game_id": "0022500059"
+      },
+      {
+        "date": "2025-11-23",
+        "fantasy_points": 86.0,
+        "opponent": "LAL @ UTA",
+        "game_id": "0022500282"
+      },
+      {
+        "date": "2025-11-18",
+        "fantasy_points": 88.0,
+        "opponent": "LAL vs. UTA",
+        "game_id": "0022500253"
+      },
+      {
+        "date": "2025-11-15",
+        "fantasy_points": 89.0,
+        "opponent": "LAL @ MIL",
+        "game_id": "0022500231"
+      },
+      {
+        "date": "2025-11-14",
+        "fantasy_points": 77.0,
+        "opponent": "LAL @ NOP",
+        "game_id": "0022500045"
+      },
+      {
+        "date": "2025-11-12",
+        "fantasy_points": 52.0,
+        "opponent": "LAL @ OKC",
+        "game_id": "0022500222"
+      },
+      {
+        "date": "2025-11-10",
+        "fantasy_points": 91.0,
+        "opponent": "LAL @ CHA",
+        "game_id": "0022500198"
+      },
+      {
+        "date": "2025-11-08",
+        "fantasy_points": 64.0,
+        "opponent": "LAL @ ATL",
+        "game_id": "0022500185"
+      },
+      {
+        "date": "2025-11-05",
+        "fantasy_points": 113.0,
+        "opponent": "LAL vs. SAS",
+        "game_id": "0022500179"
+      },
+      {
+        "date": "2025-11-02",
+        "fantasy_points": 92.0,
+        "opponent": "LAL vs. MIA",
+        "game_id": "0022500155"
+      },
+      {
+        "date": "2025-10-31",
+        "fantasy_points": 94.0,
+        "opponent": "LAL @ MEM",
+        "game_id": "0022500024"
+      },
+      {
+        "date": "2025-10-24",
+        "fantasy_points": 105.0,
+        "opponent": "LAL vs. MIN",
+        "game_id": "0022500019"
+      },
+      {
+        "date": "2025-10-21",
+        "fantasy_points": 117.0,
+        "opponent": "LAL vs. GSW",
+        "game_id": "0022500002"
+      }
+    ]
+  },
+  "3102531": {
+    "espn_player_id": 3102531,
+    "nba_player_id": 204001,
+    "name": "Kristaps Porzingis",
+    "proTeam": "ATL",
+    "season": "2025-26",
+    "history": [
+      {
+        "date": "2025-11-25",
+        "fantasy_points": 47.0,
+        "opponent": "ATL @ WAS",
+        "game_id": "0022500057"
+      },
+      {
+        "date": "2025-11-22",
+        "fantasy_points": 80.0,
+        "opponent": "ATL @ NOP",
+        "game_id": "0022500270"
+      },
+      {
+        "date": "2025-11-20",
+        "fantasy_points": 45.0,
+        "opponent": "ATL @ SAS",
+        "game_id": "0022500267"
+      },
+      {
+        "date": "2025-11-12",
+        "fantasy_points": 46.0,
+        "opponent": "ATL @ SAC",
+        "game_id": "0022500223"
+      },
+      {
+        "date": "2025-11-10",
+        "fantasy_points": 54.0,
+        "opponent": "ATL @ LAC",
+        "game_id": "0022500206"
+      },
+      {
+        "date": "2025-11-07",
+        "fantasy_points": 55.0,
+        "opponent": "ATL vs. TOR",
+        "game_id": "0022500030"
+      },
+      {
+        "date": "2025-11-04",
+        "fantasy_points": 37.0,
+        "opponent": "ATL vs. ORL",
+        "game_id": "0022500166"
+      },
+      {
+        "date": "2025-11-02",
+        "fantasy_points": 50.0,
+        "opponent": "ATL @ CLE",
+        "game_id": "0022500151"
+      },
+      {
+        "date": "2025-10-31",
+        "fantasy_points": 35.0,
+        "opponent": "ATL @ IND",
+        "game_id": "0022500020"
+      },
+      {
+        "date": "2025-10-29",
+        "fantasy_points": 57.0,
+        "opponent": "ATL @ BKN",
+        "game_id": "0022500130"
+      },
+      {
+        "date": "2025-10-27",
+        "fantasy_points": 56.0,
+        "opponent": "ATL @ CHI",
+        "game_id": "0022500115"
+      },
+      {
+        "date": "2025-10-22",
+        "fantasy_points": 49.0,
+        "opponent": "ATL vs. TOR",
+        "game_id": "0022500082"
+      }
+    ]
+  },
+  "4278585": {
+    "espn_player_id": 4278585,
+    "nba_player_id": 1631221,
+    "name": "Collin Gillespie",
+    "proTeam": "PHO",
+    "season": "2025-26",
+    "history": [
+      {
+        "date": "2025-12-01",
+        "fantasy_points": 74.0,
+        "opponent": "PHX @ LAL",
+        "game_id": "0022500317"
+      },
+      {
+        "date": "2025-11-29",
+        "fantasy_points": 34.0,
+        "opponent": "PHX vs. DEN",
+        "game_id": "0022500299"
+      },
+      {
+        "date": "2025-11-28",
+        "fantasy_points": 55.0,
+        "opponent": "PHX @ OKC",
+        "game_id": "0022500075"
+      },
+      {
+        "date": "2025-11-26",
+        "fantasy_points": 62.0,
+        "opponent": "PHX @ SAC",
+        "game_id": "0022500068"
+      },
+      {
+        "date": "2025-11-24",
+        "fantasy_points": 46.0,
+        "opponent": "PHX vs. HOU",
+        "game_id": "0022500290"
+      },
+      {
+        "date": "2025-11-23",
+        "fantasy_points": 49.0,
+        "opponent": "PHX vs. SAS",
+        "game_id": "0022500281"
+      },
+      {
+        "date": "2025-11-21",
+        "fantasy_points": 55.0,
+        "opponent": "PHX vs. MIN",
+        "game_id": "0022500053"
+      },
+      {
+        "date": "2025-11-18",
+        "fantasy_points": 48.0,
+        "opponent": "PHX @ POR",
+        "game_id": "0022500254"
+      },
+      {
+        "date": "2025-11-16",
+        "fantasy_points": 52.0,
+        "opponent": "PHX vs. ATL",
+        "game_id": "0022500239"
+      },
+      {
+        "date": "2025-11-13",
+        "fantasy_points": 20.0,
+        "opponent": "PHX vs. IND",
+        "game_id": "0022500226"
+      },
+      {
+        "date": "2025-11-12",
+        "fantasy_points": 22.0,
+        "opponent": "PHX @ DAL",
+        "game_id": "0022500221"
+      },
+      {
+        "date": "2025-11-10",
+        "fantasy_points": 23.0,
+        "opponent": "PHX vs. NOP",
+        "game_id": "0022500204"
+      },
+      {
+        "date": "2025-11-08",
+        "fantasy_points": 38.0,
+        "opponent": "PHX @ LAC",
+        "game_id": "0022500190"
+      },
+      {
+        "date": "2025-11-06",
+        "fantasy_points": 19.0,
+        "opponent": "PHX vs. LAC",
+        "game_id": "0022500182"
+      },
+      {
+        "date": "2025-11-04",
+        "fantasy_points": 29.0,
+        "opponent": "PHX @ GSW",
+        "game_id": "0022500169"
+      },
+      {
+        "date": "2025-11-02",
+        "fantasy_points": 42.0,
+        "opponent": "PHX vs. SAS",
+        "game_id": "0022500154"
+      },
+      {
+        "date": "2025-10-31",
+        "fantasy_points": 47.0,
+        "opponent": "PHX vs. UTA",
+        "game_id": "0022500025"
+      },
+      {
+        "date": "2025-10-29",
+        "fantasy_points": 52.0,
+        "opponent": "PHX vs. MEM",
+        "game_id": "0022500137"
+      },
+      {
+        "date": "2025-10-27",
+        "fantasy_points": 73.0,
+        "opponent": "PHX @ UTA",
+        "game_id": "0022500120"
+      },
+      {
+        "date": "2025-10-25",
+        "fantasy_points": 14.0,
+        "opponent": "PHX @ DEN",
+        "game_id": "0022500104"
+      },
+      {
+        "date": "2025-10-24",
+        "fantasy_points": 43.0,
+        "opponent": "PHX @ LAC",
+        "game_id": "0022500099"
+      },
+      {
+        "date": "2025-10-22",
+        "fantasy_points": 32.0,
+        "opponent": "PHX vs. SAC",
+        "game_id": "0022500088"
+      }
+    ]
+  },
+  "4433629": {
+    "espn_player_id": 4433629,
+    "nba_player_id": 1642948,
+    "name": "Ryan Nembhard",
+    "proTeam": "DAL",
+    "season": "2025-26",
+    "history": [
+      {
+        "date": "2025-12-03",
+        "fantasy_points": 68.0,
+        "opponent": "DAL vs. MIA",
+        "game_id": "0022500332"
+      },
+      {
+        "date": "2025-12-01",
+        "fantasy_points": 84.0,
+        "opponent": "DAL @ DEN",
+        "game_id": "0022500315"
+      },
+      {
+        "date": "2025-11-29",
+        "fantasy_points": 19.0,
+        "opponent": "DAL @ LAC",
+        "game_id": "0022500300"
+      },
+      {
+        "date": "2025-11-28",
+        "fantasy_points": 44.0,
+        "opponent": "DAL @ LAL",
+        "game_id": "0022500078"
+      },
+      {
+        "date": "2025-11-24",
+        "fantasy_points": 21.0,
+        "opponent": "DAL @ MIA",
+        "game_id": "0022500286"
+      },
+      {
+        "date": "2025-11-08",
+        "fantasy_points": 2.0,
+        "opponent": "DAL @ WAS",
+        "game_id": "0022500183"
+      },
+      {
+        "date": "2025-11-07",
+        "fantasy_points": 15.0,
+        "opponent": "DAL @ MEM",
+        "game_id": "0022500034"
+      },
+      {
+        "date": "2025-10-26",
+        "fantasy_points": -4.0,
+        "opponent": "DAL vs. TOR",
+        "game_id": "0022500111"
+      },
+      {
+        "date": "2025-10-24",
+        "fantasy_points": 5.0,
+        "opponent": "DAL vs. WAS",
+        "game_id": "0022500096"
+      },
+      {
+        "date": "2025-10-22",
+        "fantasy_points": 18.0,
+        "opponent": "DAL vs. SAS",
+        "game_id": "0022500004"
+      }
+    ]
+  },
+  "4593125": {
+    "espn_player_id": 4593125,
+    "nba_player_id": 1630583,
+    "name": "Santi Aldama",
+    "proTeam": "MEM",
+    "season": "2025-26",
+    "history": [
+      {
+        "date": "2025-12-02",
+        "fantasy_points": 23.0,
+        "opponent": "MEM @ SAS",
+        "game_id": "0022500322"
+      },
+      {
+        "date": "2025-11-30",
+        "fantasy_points": 29.0,
+        "opponent": "MEM @ SAC",
+        "game_id": "0022500307"
+      },
+      {
+        "date": "2025-11-28",
+        "fantasy_points": 39.0,
+        "opponent": "MEM @ LAC",
+        "game_id": "0022500079"
+      },
+      {
+        "date": "2025-11-26",
+        "fantasy_points": 43.0,
+        "opponent": "MEM @ NOP",
+        "game_id": "0022500065"
+      },
+      {
+        "date": "2025-11-24",
+        "fantasy_points": 54.0,
+        "opponent": "MEM vs. DEN",
+        "game_id": "0022500287"
+      },
+      {
+        "date": "2025-11-22",
+        "fantasy_points": 64.0,
+        "opponent": "MEM @ DAL",
+        "game_id": "0022500273"
+      },
+      {
+        "date": "2025-11-20",
+        "fantasy_points": 72.0,
+        "opponent": "MEM vs. SAC",
+        "game_id": "0022500265"
+      },
+      {
+        "date": "2025-11-18",
+        "fantasy_points": 34.0,
+        "opponent": "MEM @ SAS",
+        "game_id": "0022500252"
+      },
+      {
+        "date": "2025-11-15",
+        "fantasy_points": 46.0,
+        "opponent": "MEM @ CLE",
+        "game_id": "0022500228"
+      },
+      {
+        "date": "2025-11-12",
+        "fantasy_points": 46.0,
+        "opponent": "MEM @ BOS",
+        "game_id": "0022500216"
+      },
+      {
+        "date": "2025-11-11",
+        "fantasy_points": 47.0,
+        "opponent": "MEM @ NYK",
+        "game_id": "0022500208"
+      },
+      {
+        "date": "2025-11-09",
+        "fantasy_points": 44.0,
+        "opponent": "MEM vs. OKC",
+        "game_id": "0022500194"
+      },
+      {
+        "date": "2025-11-07",
+        "fantasy_points": 30.0,
+        "opponent": "MEM vs. DAL",
+        "game_id": "0022500034"
+      },
+      {
+        "date": "2025-11-05",
+        "fantasy_points": 44.0,
+        "opponent": "MEM vs. HOU",
+        "game_id": "0022500176"
+      },
+      {
+        "date": "2025-11-03",
+        "fantasy_points": 23.0,
+        "opponent": "MEM vs. DET",
+        "game_id": "0022500161"
+      },
+      {
+        "date": "2025-11-02",
+        "fantasy_points": 34.0,
+        "opponent": "MEM @ TOR",
+        "game_id": "0022500152"
+      },
+      {
+        "date": "2025-10-31",
+        "fantasy_points": 32.0,
+        "opponent": "MEM vs. LAL",
+        "game_id": "0022500024"
+      },
+      {
+        "date": "2025-10-29",
+        "fantasy_points": 63.0,
+        "opponent": "MEM @ PHX",
+        "game_id": "0022500137"
+      },
+      {
+        "date": "2025-10-27",
+        "fantasy_points": 48.0,
+        "opponent": "MEM @ GSW",
+        "game_id": "0022500121"
+      },
+      {
+        "date": "2025-10-25",
+        "fantasy_points": 36.0,
+        "opponent": "MEM vs. IND",
+        "game_id": "0022500103"
+      },
+      {
+        "date": "2025-10-24",
+        "fantasy_points": 35.0,
+        "opponent": "MEM vs. MIA",
+        "game_id": "0022500094"
+      },
+      {
+        "date": "2025-10-22",
+        "fantasy_points": 25.0,
+        "opponent": "MEM vs. NOP",
+        "game_id": "0022500085"
+      }
+    ]
   }
 }
