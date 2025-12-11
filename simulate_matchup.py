@@ -117,18 +117,23 @@ def monte_carlo(team1, team2, history_map, trials=50000, game_day=None, live_sta
 def run_today_matchups(trials: int = 20000):
     """
     Runs Monte Carlo for all today's matchups and returns a list of dicts
-    we can easily JSON-ify.
+    we can easily JSON-ify. If there are no live NBA games, persist the
+    projected scores to a dated JSON file.
     """
     hist = load_history()
     today = date.today()
     live_state = build_live_state_for_league(hist, game_day=today)
+    is_live = bool(live_state)  # live_state populated only when there are active games
     box_scores = league.box_scores(matchup_total=False)
 
     results_list = []
+    current_scores = {}
 
     for box in box_scores:
         home_team = box.home_team
         away_team = box.away_team
+        home_current = box.home_score
+        away_current = box.away_score
 
         res = monte_carlo(
             home_team,
@@ -150,12 +155,35 @@ def run_today_matchups(trials: int = 20000):
             "trials": res["trials"],
             "home_team_url": home_team.logo_url,
             "away_team_url": away_team.logo_url,
+            "home_current_score": home_current,
+            "away_current_score": away_current,
         })
 
-    return {
+    proj_scores = {}
+    for m in results_list:
+        proj_scores[m["home_team"]] = m["home_avg"]
+        proj_scores[m["away_team"]] = m["away_avg"]
+        current_scores[m["home_team"]] = m["home_current_score"]
+        current_scores[m["away_team"]] = m["away_current_score"]
+
+    result = {
         "date": today.isoformat(),
+        "is_live": is_live,
         "matchups": results_list,
+        "proj_scores": proj_scores,
+        "current_scores": current_scores,
     }
+
+    if not is_live:
+        filename = f"{today.isoformat()}_projScore.json"
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2)
+            print(f"[run_today_matchups] projected scores saved to {filename}")
+        except OSError as exc:
+            print(f"[run_today_matchups] could not write {filename}: {exc}")
+
+    return result
 
 
 def run_custom_matchup(team1_name: str, team2_name: str, trials: int = 20000):

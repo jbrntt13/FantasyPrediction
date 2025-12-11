@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from simulate_matchup import run_today_matchups, run_custom_matchup
-
+from patch_missing_players import main as patch_missing_players_main
 app = FastAPI(title="Fantasy Live Odds API")
 
 # CORS for mobile / other frontends
@@ -31,10 +31,24 @@ def health():
 def odds_today(trials: int = 20000):
     """
     Returns live-adjusted Monte Carlo odds for all today's matchups.
+    Response includes:
+      - is_live: whether any NBA games are currently live
+      - proj_scores: per-team projected final score for today
+      - current_scores: per-team current score (live ESPN feed)
     """
     data = run_today_matchups(trials=trials)
     return data
 
+@app.get("/patch_missing_players")
+def patch_missing_players():
+    """
+    Runs the patch_missing_players script to update player history.
+    """
+    try:
+        patch_missing_players_main()
+        return {"status": "success", "message": "Missing players patched successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/odds/custom")
 def odds_custom(
