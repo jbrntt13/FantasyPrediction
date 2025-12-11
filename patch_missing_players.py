@@ -3,6 +3,7 @@ import unicodedata
 
 import json
 from pathlib import Path
+import time
 
 from fantasy import league
 from NBAintegration import (
@@ -13,6 +14,7 @@ from NBAintegration import (
 
 
 HISTORY_PATH = Path("fantasy_player_history_2025-26.json")
+RATE_LIMIT_SECONDS = 5
 
 
 def load_history():
@@ -53,6 +55,8 @@ def append_new_games(history, pid_str, nba_id, player_name, season):
     except Exception as e:
         print(f"!! Error fetching history for {player_name}: {e}")
         return 0
+    # Rate limit between player fetches
+    time.sleep(RATE_LIMIT_SECONDS)
 
     existing = history.get(pid_str, {})
     existing_hist = existing.get("history", [])
@@ -147,6 +151,8 @@ def main():
         except Exception as e:
             print(f"!! Error fetching history for {p.name}: {e}")
             continue
+        # Rate limit between player fetches
+        time.sleep(RATE_LIMIT_SECONDS)
 
         hist_serializable = serialize_history_rows(rows)
         history[str(p.playerId)] = {

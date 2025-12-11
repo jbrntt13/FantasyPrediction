@@ -5,7 +5,9 @@ import random
 from datetime import date
 from pathlib import Path
 from typing import Dict, Any
-
+from fantasy import league  # you already have this in other files
+import requests
+from datetime import date
 from nba_api.stats.endpoints import ScoreboardV2, BoxScoreTraditionalV2
 
 from fantasy import league  # your ESPN league object
@@ -45,34 +47,105 @@ def player_fp_distribution(player, history_map: Dict[str, Any]):
 # NBA scoreboard / live status
 # -----------------------------
 
-def get_today_scoreboard(game_day: date | None = None):
+ESPN_TO_NBA = {
+    "ATL": "ATL",
+    "BOS": "BOS",
+    "BKN": "BKN",
+    "CHA": "CHA",
+    "CHI": "CHI",
+    "CLE": "CLE",
+    "DAL": "DAL",
+    "DEN": "DEN",
+    "DET": "DET",
+    "GS": "GSW",    # ESPN "GS" -> "GSW"
+    "HOU": "HOU",
+    "IND": "IND",
+    "LAC": "LAC",
+    "LAL": "LAL",
+    "MEM": "MEM",
+    "MIA": "MIA",
+    "MIL": "MIL",
+    "MIN": "MIN",
+    "NO": "NOP",    # <- this is the big one
+    "NY": "NYK",    # ESPN "NY" -> "NYK"
+    "OKC": "OKC",
+    "ORL": "ORL",
+    "PHI": "PHI",
+    "PHO": "PHX",   # ESPN "PHO" -> "PHX"
+    "PHX": "PHX",   # just in case
+    "POR": "POR",
+    "SAC": "SAC",
+    "SA": "SAS",    # ESPN "SA" -> "SAS"
+    "SAS": "SAS",
+    "TOR": "TOR",
+    "UTA": "UTA",
+    "UTAH": "UTA",  # if ESPN ever uses this
+    "WAS": "WAS",
+    "WSH": "WAS",   # ESPN sometimes
+}
+
+
+def map_pro_team_to_nba(pro_team: str | None) -> str | None:
+    if not pro_team:
+        return None
+    return ESPN_TO_NBA.get(pro_team, pro_team)
+
+
+def fetch_nba_live_games():
+    url = "https://api-nba-v1.p.rapidapi.com/games"
+    querystring = {"live": "all"}
+
+    headers = {
+        "x-rapidapi-key": "d4bfbc4596msh7f5df671e47c27dp1af307jsn849a11cfef2a",
+        "x-rapidapi-host": "api-nba-v1.p.rapidapi.com"
+    }
+
+    resp = requests.get(url, headers=headers, params=querystring)
+    resp.raise_for_status()
+    data = resp.json()
+    # DEBUG
+    print(data)
+    print("yay")
+    return data
+
+
+def compute_game_fraction_from_api_nba(game: dict) -> float:
     """
-    Use nba_api ScoreboardV2 to get today’s games + team line scores.
+    Compute fraction of the game completed using API-NBA structure:
+    game["periods"]["current"], game["periods"]["total"], game["status"]["clock"]
     """
-    if game_day is None:
-        game_day = date.today()
+    periods = game.get("periods", {}) or {}
+    current = periods.get("current") or 0
+    total = periods.get("total") or 4
 
-    game_date_str = game_day.strftime("%m/%d/%Y")
+    status = game.get("status", {}) or {}
+    clock = status.get("clock")  # e.g. "7:58", or maybe None/""
 
-    sb = ScoreboardV2(game_date=game_date_str, league_id="00", day_offset=0)
-    games_df = sb.game_header.get_data_frame()
-    line_scores_df = sb.line_score.get_data_frame()
-    return games_df, line_scores_df
+    if not total or total <= 0:
+        total = 4
 
+    total_minutes = total * 12.0
 
-def build_team_to_game_map(game_day: date | None = None):
-    """
-    Map NBA team abbreviation (e.g. 'PHX') -> GAME_ID for today.
-    """
-    games_df, line_scores_df = get_today_scoreboard(game_day)
+    if current == 0:
+        return 0.0
 
-    team_to_game: Dict[str, str] = {}
-    for _, row in line_scores_df.iterrows():
-        team_abbr = row["TEAM_ABBREVIATION"]  # e.g. 'PHX'
-        game_id = row["GAME_ID"]
-        team_to_game[team_abbr] = game_id
+    # If we have a proper clock like "7:58"
+    if isinstance(clock, str) and ":" in clock:
+        try:
+            mins, secs = clock.split(":")
+            mins = int(mins)
+            secs = int(secs)
+            minutes_left_in_period = mins + secs / 60.0
+        except Exception:
+            minutes_left_in_period = 6.0  # shrug
+    else:
+        # No clock? assume halfway through current period
+        minutes_left_in_period = 6.0
 
-    return team_to_game, games_df
+    minutes_elapsed = (current - 1) * 12.0 + (12.0 - minutes_left_in_period)
+    frac = minutes_elapsed / total_minutes
+    return max(0.0, min(1.0, frac))
+
 
 
 def get_game_row(games_df, game_id: str):
@@ -187,85 +260,96 @@ def compute_fantasy_from_stat_row(row) -> float:
 
     return float(score)
 
+from fantasy import league  # you already have this in other files
 
-# -----------------------------
-# Live state builder
-# -----------------------------
 
-def build_player_live_state(
-    player,
-    history_map: Dict[str, Any],
-    team_to_game_map: Dict[str, str],
-    games_df,
-) -> Dict[str, Any] | None:
+def build_fantasy_points_map() -> dict[int, float]:
     """
-    Return a per-player dict describing today's game status:
-
-        {
-          "has_game_today": True,
-          "fraction_done": float,
-          "fantasy_points_so_far": float
-        }
-
-    or None if the player has no game today.
+    Build a dict of ESPN playerId -> current fantasy points from ESPN box scores.
     """
-    pro_team = getattr(player, "proTeam", None)
-    if not pro_team or pro_team not in team_to_game_map:
-        return None
+    points_map: dict[int, float] = {}
+    box_scores = league.box_scores(matchup_total=False)
 
-    game_id = team_to_game_map[pro_team]
-    game_row = get_game_row(games_df, game_id)
-    if game_row is None:
-        return None
+    for box in box_scores:
+        for p in box.home_lineup + box.away_lineup:
+            # latest value wins, doesn't really matter because they should match
+            points_map[p.playerId] = float(getattr(p, "points", 0.0))
 
-    frac = game_fraction_done(game_row)
-
-    # Get nba_player_id from history JSON if we have it
-    player_hist = history_map.get(str(player.playerId))
-    if not player_hist:
-        nba_id = None
-    else:
-        nba_id = player_hist.get("nba_player_id")
-
-    if not nba_id:
-        # We know the player has a game, but not how to map them to NBA stats → treat as 0 so far
-        return {
-            "has_game_today": True,
-            "fraction_done": frac,
-            "fantasy_points_so_far": 0.0,
-        }
-
-    partial_row = get_player_partial_boxscore(game_id, nba_id)
-    if partial_row is None:
-        fp_so_far = 0.0
-    else:
-        fp_so_far = compute_fantasy_from_stat_row(partial_row)
-
-    return {
-        "has_game_today": True,
-        "fraction_done": frac,
-        "fantasy_points_so_far": fp_so_far,
-    }
+    print(f"[build_fantasy_points_map] collected points for {len(points_map)} players")
+    return points_map
 
 
 def build_live_state_for_league(
-    history_map: Dict[str, Any],
+    history_map: dict[str, dict],
     game_day: date | None = None,
-) -> Dict[int, Dict[str, Any]]:
+) -> dict[int, dict]:
     """
-    Build live state for every fantasy player in the league for the given day.
-    Returns: dict[espn_player_id] = { has_game_today, fraction_done, fantasy_points_so_far }
+    Use API-NBA (RapidAPI) to see which teams have live games and
+    ESPN's own box_scores to get current fantasy points.
+
+    Returns: dict[espn_player_id] = {
+        "has_game_today": True,
+        "fraction_done": float (0..1),
+        "fantasy_points_so_far": float,
+    }
     """
-    team_to_game, games_df = build_team_to_game_map(game_day)
-    live_state: Dict[int, Dict[str, Any]] = {}
+    team_frac = build_live_team_fraction_map()
+    points_map = build_fantasy_points_map()
+
+    live_state: dict[int, dict] = {}
 
     for team in league.teams:
         for p in team.roster:
-            state = build_player_live_state(p, history_map, team_to_game, games_df)
-            if state is not None:
-                live_state[p.playerId] = state
+            raw_team = getattr(p, "proTeam", None)
+            nba_team = map_pro_team_to_nba(raw_team)
 
+            if not nba_team:
+                continue
+
+            frac = team_frac.get(nba_team.upper())
+            if frac is None:
+                # this team is not currently in a live game
+                continue
+
+            fp_so_far = points_map.get(p.playerId, 0.0)
+
+            live_state[p.playerId] = {
+                "has_game_today": True,
+                "fraction_done": frac,
+                "fantasy_points_so_far": fp_so_far,
+            }
+
+    print(f"[build_live_state_for_league] live_state players: {len(live_state)}")
     return live_state
+
+def build_live_team_fraction_map() -> dict[str, float]:
+    """
+    Returns a dict like {"NOP": 0.42, "BKN": 0.42} for all currently live games.
+    """
+    data = fetch_nba_live_games()
+    games = data.get("response", []) or []
+    team_frac = {}
+
+    print(f"[build_live_team_fraction_map] live games count: {len(games)}")
+
+    for g in games:
+        frac = compute_game_fraction_from_api_nba(g)
+
+        teams = g.get("teams", {}) or {}
+        home = teams.get("home", {}) or {}
+        away = teams.get("visitors", {}) or {}
+
+        home_code = home.get("code")
+        away_code = away.get("code")
+
+        if home_code:
+            team_frac[home_code.upper()] = frac
+        if away_code:
+            team_frac[away_code.upper()] = frac
+
+    print("[build_live_team_fraction_map] team_frac:", team_frac)
+    return team_frac
+
 
 
 # -----------------------------
@@ -403,6 +487,7 @@ def find_matchup_box(team_name_a: str, team_name_b: str):
 
 
 if __name__ == "__main__":
+    
     history = load_history()
 
     TEAM_A_NAME = "Team Burnett"

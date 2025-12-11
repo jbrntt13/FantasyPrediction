@@ -2,8 +2,9 @@ import json
 import random
 from datetime import date
 
-from fantasy import league  # your ESPN league object
-from nbaTest import is_team_playing_on, teams_playing_on
+from fantasy import league
+from nbaTest import teams_playing_on
+from live_odds import build_live_state_for_league, simulate_player_tonight_linear
 
 
 def load_history(path="fantasy_player_history_2025-26.json"):
@@ -40,51 +41,52 @@ def is_player_active(player, game_day, playing_teams=None):
     pro_team = getattr(player, "proTeam", None)
     if playing_teams is not None:
         return pro_team in playing_teams
-    return is_team_playing_on(pro_team, game_day)
+    return teams_playing_on(pro_team, game_day)
 
 
-def active_player_distributions(team, history_map, game_day, playing_teams):
+def active_player_entries(team, history_map, game_day, playing_teams):
     """
-    Build the list of distributions once per matchup; lineup won't change mid-sim.
+    Return list of (player, dist) for active players with history.
     """
-    dists = []
+    entries = []
     for p in team.roster:
         if not is_player_active(p, game_day, playing_teams):
             continue
         dist = player_fp_distribution(p, history_map)
         if dist:
-            dists.append(dist)
-    return dists
+            entries.append((p, dist))
+    return entries
 
-
-def team_score_once(player_dists):
-    total = 0
-    for dist in player_dists:
-        total += random.choice(dist)
+def team_score_once(player_entries, history_map, live_state=None):
+    """
+    If live_state has an entry for this player, use live projection.
+    Otherwise, sample from full-game history.
+    """
+    total = 0.0
+    for player, dist in player_entries:
+        if live_state is not None and player.playerId in live_state:
+            total += simulate_player_tonight_linear(player, history_map, live_state)
+        else:
+            total += random.choice(dist)
     return total
 
 
-def monte_carlo(team1, team2, history_map, trials=50000, game_day=None):
+
+def monte_carlo(team1, team2, history_map, trials=50000, game_day=None, live_state=None):
     if game_day is None:
         game_day = date.today()
 
-    # Precompute which NBA teams have a game to avoid repeated schedule lookups
     playing_teams = teams_playing_on(game_day)
 
-    # Filter the lineups and precompute distributions once
-    team1_dists = active_player_distributions(team1, history_map, game_day, playing_teams)
-    team2_dists = active_player_distributions(team2, history_map, game_day, playing_teams)
+    team1_entries = active_player_entries(team1, history_map, game_day, playing_teams)
+    team2_entries = active_player_entries(team2, history_map, game_day, playing_teams)
 
-    t1_wins = 0
-    t2_wins = 0
-    ties = 0
-
-    sum_t1 = 0.0
-    sum_t2 = 0.0
+    t1_wins = t2_wins = ties = 0
+    sum_t1 = sum_t2 = 0.0
 
     for _ in range(trials):
-        s1 = team_score_once(team1_dists)
-        s2 = team_score_once(team2_dists)
+        s1 = team_score_once(team1_entries, history_map, live_state=live_state)
+        s2 = team_score_once(team2_entries, history_map, live_state=live_state)
 
         sum_t1 += s1
         sum_t2 += s2
@@ -99,47 +101,119 @@ def monte_carlo(team1, team2, history_map, trials=50000, game_day=None):
     avg_t1 = sum_t1 / trials
     avg_t2 = sum_t2 / trials
 
-    # probabilities
-    p_t1 = t1_wins / trials
-    p_t2 = t2_wins / trials
-    p_tie = ties / trials
-
     return {
         "team1_wins": t1_wins,
         "team2_wins": t2_wins,
         "ties": ties,
-        "p_team1": p_t1,
-        "p_team2": p_t2,
-        "p_tie": p_tie,
+        "p_team1": t1_wins / trials,
+        "p_team2": t2_wins / trials,
+        "p_tie": ties / trials,
         "avg_team1": avg_t1,
         "avg_team2": avg_t2,
         "trials": trials,
     }
 
 
-
-if __name__ == "__main__":
+def run_today_matchups(trials: int = 20000):
+    """
+    Runs Monte Carlo for all today's matchups and returns a list of dicts
+    we can easily JSON-ify.
+    """
     hist = load_history()
     today = date.today()
-
-    print(f"Simulating today's matchups ({today})...")
+    live_state = build_live_state_for_league(hist, game_day=today)
     box_scores = league.box_scores(matchup_total=False)
+
+    results_list = []
 
     for box in box_scores:
         home_team = box.home_team
         away_team = box.away_team
 
+        res = monte_carlo(
+            home_team,
+            away_team,
+            hist,
+            trials=trials,
+            game_day=today,
+            live_state=live_state,
+        )
+
+        results_list.append({
+            "home_team": home_team.team_name,
+            "away_team": away_team.team_name,
+            "home_avg": res["avg_team1"],
+            "away_avg": res["avg_team2"],
+            "home_win_prob": res["p_team1"],
+            "away_win_prob": res["p_team2"],
+            "tie_prob": res["p_tie"],
+            "trials": res["trials"],
+            "home_team_url": home_team.logo_url,
+            "away_team_url": away_team.logo_url,
+        })
+
+    return {
+        "date": today.isoformat(),
+        "matchups": results_list,
+    }
+
+
+def run_custom_matchup(team1_name: str, team2_name: str, trials: int = 20000):
+    """
+    Runs Monte Carlo for a specific pair of fantasy teams by name.
+    """
+    hist = load_history()
+    today = date.today()
+    live_state = build_live_state_for_league(hist, game_day=today)
+
+    def find_team(name: str):
+        for t in league.teams:
+            if t.team_name.lower() == name.lower():
+                return t
+        return None
+
+    team1 = find_team(team1_name)
+    team2 = find_team(team2_name)
+
+    if team1 is None or team2 is None:
+        missing = [name for name, team in ((team1_name, team1), (team2_name, team2)) if team is None]
+        raise ValueError(f"Team(s) not found: {', '.join(missing)}")
+
+    res = monte_carlo(
+        team1,
+        team2,
+        hist,
+        trials=trials,
+        game_day=today,
+        live_state=live_state,
+    )
+
+    return {
+        "team1": team1.team_name,
+        "team2": team2.team_name,
+        "team1_win_prob": res["p_team1"],
+        "team2_win_prob": res["p_team2"],
+        "tie_prob": res["p_tie"],
+        "team1_avg": res["avg_team1"],
+        "team2_avg": res["avg_team2"],
+        "trials": res["trials"],
+        "team1_url": team1.logo_url,
+        "team2_url": team2.logo_url,
+        "date": today.isoformat(),
+    }
+
+
+if __name__ == "__main__":
+    data = run_today_matchups(trials=20000)
+
+    print(f"Simulating today's matchups ({data['date']})...")
+
+    for m in data["matchups"]:
         print("\n---------------------------------------")
-        print(f"{home_team.team_name} vs {away_team.team_name}")
-
-        results = monte_carlo(home_team, away_team, hist, trials=20000, game_day=today)
-
-        print(f"Trials: {results['trials']}")
-        print(f"Simulated avg {home_team.team_name}: {results['avg_team1']:.1f}")
-        print(f"Simulated avg {away_team.team_name}: {results['avg_team2']:.1f}")
-        print(f"{home_team.team_name} wins: {results['team1_wins']} "
-              f"({results['p_team1']*100:.2f}%)")
-        print(f"{away_team.team_name} wins: {results['team2_wins']} "
-              f"({results['p_team2']*100:.2f}%)")
-        print(f"Ties: {results['ties']} "
-              f"({results['p_tie']*100:.2f}%)")
+        print(f"{m['home_team']} vs {m['away_team']}")
+        print(f"Trials: {m['trials']}")
+        print(f"Sim avg {m['home_team']}: {m['home_avg']:.1f}")
+        print(f"Sim avg {m['away_team']}: {m['away_avg']:.1f}")
+        print(f"{m['home_team']} win prob: {m['home_win_prob']*100:.2f}%")
+        print(f"{m['away_team']} win prob: {m['away_win_prob']*100:.2f}%")
+        print(f"Tie prob: {m['tie_prob']*100:.2f}%")

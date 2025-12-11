@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Fantasy Live Odds</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 1.5rem;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+    h1 {
+      margin-bottom: 0.25rem;
+    }
+    .date {
+      margin-bottom: 1rem;
+      color: #9ca3af;
+    }
+    .card {
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+      background: #111827;
+      border: 1px solid #1f2937;
+    }
+    .title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .prob-row {
+      margin-top: 0.25rem;
+      font-size: 0.9rem;
+    }
+    .loading,
+    .error {
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Fantasy Live Odds</h1>
+  <div class="date" id="date"></div>
+  <div id="content" class="loading">Loading odds…</div>
+
+  <script>
+    async function loadOdds() {
+      const content = document.getElementById("content");
+      const dateEl = document.getElementById("date");
+
+      try {
+        content.textContent = "Loading odds…";
+
+        const res = await fetch("/odds/today");
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
+        }
+
+        const data = await res.json();
+        dateEl.textContent = "Matchups for " + data.date;
+
+        if (!data.matchups || data.matchups.length === 0) {
+          content.textContent = "No matchups found for today.";
+          return;
+        }
+
+        content.innerHTML = "";
+        data.matchups.forEach((m) => {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const title = document.createElement("div");
+          title.className = "title";
+          title.textContent = `${m.home_team} vs ${m.away_team}`;
+          card.appendChild(title);
+
+          const avg = document.createElement("div");
+          avg.textContent =
+            `Avg score: ${m.home_team} ${m.home_avg.toFixed(1)} — ` +
+            `${m.away_team} ${m.away_avg.toFixed(1)}`;
+          card.appendChild(avg);
+
+          const probs = document.createElement("div");
+          probs.className = "prob-row";
+          probs.textContent =
+            `${m.home_team} ${(m.home_win_prob * 100).toFixed(1)}% | ` +
+            `${m.away_team} ${(m.away_win_prob * 100).toFixed(1)}%` +
+            (m.tie_prob > 0
+              ? ` | tie ${(m.tie_prob * 100).toFixed(2)}%`
+              : "");
+          card.appendChild(probs);
+
+          content.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+        content.className = "error";
+        content.textContent = "Failed to load odds: " + err.message;
+      }
+    }
+
+    loadOdds();
+  </script>
+</body>
+</html>
