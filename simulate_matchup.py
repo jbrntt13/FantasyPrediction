@@ -1,6 +1,7 @@
 import json
 import random
 from datetime import date
+from pathlib import Path
 
 from fantasy import league
 from nbaTest import teams_playing_on
@@ -124,6 +125,20 @@ def run_today_matchups(trials: int = 20000):
     """
     hist = load_history()
     today = datetime.now(tz=ZoneInfo("UTC")).astimezone(LA)
+    date_str = today.date().isoformat()
+    proj_file = Path(f"{date_str}_projScore.json")
+    cached_proj_scores = None
+    cached_win_probs = None
+    if proj_file.exists():
+        try:
+            with proj_file.open("r", encoding="utf-8") as f:
+                cached = json.load(f)
+            cached_proj_scores = cached.get("proj_scores")
+            cached_win_probs = cached.get("win_probs")
+            print(f"[run_today_matchups] loaded cached projections from {proj_file.name}")
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"[run_today_matchups] failed to read cached projections: {exc}")
+
     live_state = build_live_state_for_league(hist, game_day=today)
     is_live = bool(live_state)  # live_state populated only when there are active games
     box_scores = league.box_scores(matchup_total=False)
@@ -162,22 +177,31 @@ def run_today_matchups(trials: int = 20000):
         })
 
     proj_scores = {}
+    win_probs = {}
     for m in results_list:
         proj_scores[m["home_team"]] = m["home_avg"]
         proj_scores[m["away_team"]] = m["away_avg"]
         current_scores[m["home_team"]] = m["home_current_score"]
         current_scores[m["away_team"]] = m["away_current_score"]
+        win_probs[m["home_team"]] = m["home_win_prob"]
+        win_probs[m["away_team"]] = m["away_win_prob"]
+
+    if cached_proj_scores:
+        proj_scores = cached_proj_scores
+    if cached_win_probs:
+        win_probs = cached_win_probs
 
     result = {
-        "date": today.isoformat(),
+        "date": date_str,
         "is_live": is_live,
         "matchups": results_list,
         "proj_scores": proj_scores,
         "current_scores": current_scores,
+        "win_probs": win_probs,
     }
 
     if not is_live:
-        filename = f"{today.isoformat()}_projScore.json"
+        filename = proj_file.name
         try:
             with open(filename, "w", encoding="utf-8") as f:
                 json.dump(result, f, indent=2)
