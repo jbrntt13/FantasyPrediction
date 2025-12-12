@@ -5,7 +5,8 @@ from datetime import date
 from fantasy import league
 from nbaTest import teams_playing_on
 from live_odds import build_live_state_for_league, simulate_player_tonight_linear
-
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 def load_history(path="fantasy_player_history_2025-26.json"):
     with open(path, "r", encoding="utf-8") as f:
@@ -112,6 +113,7 @@ def monte_carlo(team1, team2, history_map, trials=50000, game_day=None, live_sta
         "avg_team2": avg_t2,
         "trials": trials,
     }
+LA = ZoneInfo("America/Los_Angeles")
 
 
 def run_today_matchups(trials: int = 20000):
@@ -121,7 +123,7 @@ def run_today_matchups(trials: int = 20000):
     projected scores to a dated JSON file.
     """
     hist = load_history()
-    today = date.today()
+    today = datetime.now(tz=ZoneInfo("UTC")).astimezone(LA)
     live_state = build_live_state_for_league(hist, game_day=today)
     is_live = bool(live_state)  # live_state populated only when there are active games
     box_scores = league.box_scores(matchup_total=False)
