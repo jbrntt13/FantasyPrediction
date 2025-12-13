@@ -2,13 +2,13 @@
 
 import json
 import random
-from datetime import date
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any
 from fantasy import league  # you already have this in other files
 import requests
-from datetime import date
 from nba_api.stats.endpoints import ScoreboardV2, BoxScoreTraditionalV2
+from zoneinfo import ZoneInfo
 
 from fantasy import league  # your ESPN league object
 
@@ -91,7 +91,7 @@ def map_pro_team_to_nba(pro_team: str | None) -> str | None:
     return ESPN_TO_NBA.get(pro_team, pro_team)
 
 
-def fetch_nba_live_games():
+def fetch_nba_live_games_old():
     url = "https://api-nba-v1.p.rapidapi.com/games"
     querystring = {"live": "all"}
 
@@ -108,6 +108,27 @@ def fetch_nba_live_games():
     print("yay")
     return data
 
+def fetch_nba_live_games():
+    url = "https://v1.basketball.api-sports.io/games"
+    la_tz = ZoneInfo("America/Los_Angeles")
+    today = datetime.now(tz=ZoneInfo("UTC")).astimezone(la_tz)
+    date_str = (today.date() + timedelta(days=1)).isoformat()  # tomorrow's date
+    querystring = {
+        "league": 12,
+        "season": "2025-2026",
+        "date": date_str,
+    }
+
+    headers = {
+        "x-apisports-key": "708d7918ac2f9fd942b464d77160c20c",
+    }
+
+    resp = requests.get(url, headers=headers, params=querystring)
+    resp.raise_for_status()
+    data = resp.json()
+    # DEBUG
+    print("yay")
+    return data
 
 def compute_game_fraction_from_api_nba(game: dict) -> float:
     """

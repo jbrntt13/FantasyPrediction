@@ -1,9 +1,11 @@
-import requests
 import os
 import json
 from datetime import datetime, date
-from typing import Set, Optional
-import time
+from zoneinfo import ZoneInfo
+from typing import Set, Optional, Union
+
+from nba_api.live.nba.endpoints import scoreboard as live_scoreboard
+
 
 team_name_mapping = {
     'ATL': 'Atlanta Hawks', 'BOS': 'Boston Celtics', 'BKN': 'Brooklyn Nets', 'CHA': 'Charlotte Hornets',
@@ -31,33 +33,78 @@ TEAM_CODE_CANON = {
     # add more aliases here if you bump into them
 }
 
-RATE_LIMIT_SECONDS = 5
 
-def canonical_team(code: str | None) -> str | None:
+def canonical_team(code: Optional[str]) -> Optional[str]:
     if code is None:
         return None
     return TEAM_CODE_CANON.get(code.upper(), code.upper())
 
 
-def fetch_nba_live_games():
-    url = "https://api-nba-v1.p.rapidapi.com/games"
-
-    querystring = {"live": "all"}
-
-    headers = {
-        "x-rapidapi-key": "d4bfbc4596msh7f5df671e47c27dp1af307jsn849a11cfef2a",
-        "x-rapidapi-host": "api-nba-v1.p.rapidapi.com"
-    }
-
-    response = requests.get(url, headers=headers, params=querystring)
-    data = response.json()
-
-    return response.json()
+def _la_today() -> date:
+    """Today's date in America/Los_Angeles as a `date`."""
+    la_tz = ZoneInfo("America/Los_Angeles")
+    return datetime.now(tz=ZoneInfo("UTC")).astimezone(la_tz).date()
 
 
-def fetch_nba_schedule(path: str = None):
+# ---------------------------------------------------------------------------
+# Live games via nba_api.live scoreboard
+# ---------------------------------------------------------------------------
+
+def fetch_nba_live_games() -> dict:
     """
-    Load the full NBA schedule from a local JSON file instead of an HTTP API.
+    Use nba_api.live.nba.endpoints.scoreboard.ScoreBoard to get today's games.
+
+    We normalize this into a shape that matches what your old Basketball API
+    code expected:
+
+        {
+          "response": [
+            {
+              "gameId": "...",
+              "gameStatus": ...,
+              "gameStatusText": "...",
+              "teams": {
+                "home": {"code": "MEM"},
+                "visitors": {"code": "UTA"},
+              },
+            },
+            ...
+          ]
+        }
+    """
+    games = live_scoreboard.ScoreBoard()
+    data = games.get_dict()
+
+    response = []
+    for g in data.get("scoreboard", {}).get("games", []):
+        home = g.get("homeTeam", {}) or {}
+        away = g.get("awayTeam", {}) or {}
+
+        home_code = home.get("teamTricode")
+        away_code = away.get("teamTricode")
+
+        response.append(
+            {
+                "gameId": g.get("gameId"),
+                "gameStatus": g.get("gameStatus"),
+                "gameStatusText": g.get("gameStatusText"),
+                "teams": {
+                    "home": {"code": home_code},
+                    "visitors": {"code": away_code},
+                },
+            }
+        )
+
+    return {"response": response}
+
+
+# ---------------------------------------------------------------------------
+# Local schedule JSON
+# ---------------------------------------------------------------------------
+
+def fetch_nba_schedule(path: str | None = None) -> dict:
+    """
+    Load the full NBA schedule from a local JSON file instead of any HTTP API.
     Default: scheduleLeagueV2.json in the same directory as this file.
     """
     if path is None:
@@ -66,40 +113,35 @@ def fetch_nba_schedule(path: str = None):
 
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-
+    print(f"[fetch_nba_schedule] loaded schedule from {path}")
     return data
-
 
 
 # Load once at module import
 SCHEDULE_DATA = fetch_nba_schedule()
 
-from typing import Set
 
+# ---------------------------------------------------------------------------
+# Public helpers
+# ---------------------------------------------------------------------------
 
-import requests
-from datetime import date
-
-RAPIDAPI_HEADERS = {
-    "x-rapidapi-key": "d4bfbc4596msh7f5df671e47c27dp1af307jsn849a11cfef2a",
-    "x-rapidapi-host": "api-nba-v1.p.rapidapi.com",
-}
-
-def fetch_games_by_date(game_day: date):
-    url = "https://api-nba-v1.p.rapidapi.com/games"
-    querystring = {"date": game_day.isoformat()}
-    resp = requests.get(url, headers=RAPIDAPI_HEADERS, params=querystring)
-    resp.raise_for_status()
-    # Rate limit between player fetches
-    time.sleep(RATE_LIMIT_SECONDS)
-    return resp.json()
-
-def teams_playing_on(game_day: date, schedule: dict = None) -> Set[str]:
+def teams_playing_on(
+    game_day: Union[date, datetime],
+    schedule: Optional[dict] = None
+) -> Set[str]:
     """
     Return a set of team tricodes (e.g. 'MEM', 'LAL') that have a game on game_day.
+
     1) Prefer the local schedule JSON.
-    2) If that returns nothing, fall back to the RapidAPI `games?date=YYYY-MM-DD`.
+    2) If that returns nothing, fall back to the nba_api.live ScoreBoard for *today*.
+
+    NOTE: If you pass a datetime, it will be converted to .date() so timezones
+    don't silently break equality checks.
     """
+    # Normalize datetime -> date so 2025-12-12T16:08 in LA matches the schedule
+    if isinstance(game_day, datetime):
+        game_day = game_day.date()
+
     if schedule is None:
         schedule = SCHEDULE_DATA
 
@@ -109,11 +151,13 @@ def teams_playing_on(game_day: date, schedule: dict = None) -> Set[str]:
     # --- 1) Try local JSON schedule ---
     for date_bucket in league_sched.get("gameDates", []):
         for game in date_bucket.get("games", []):
-            game_utc = game.get("gameDateUTC")
+            # You chose EST before because UTC in this file had some weird edge cases.
+            game_utc = game.get("gameDateEST") or game.get("gameDateUTC") or ""
             if not game_utc:
                 continue
 
             try:
+                # gameDateEST looks like "2025-12-12T00:00:00Z"
                 game_date = datetime.fromisoformat(
                     game_utc.replace("Z", "+00:00")
                 ).date()
@@ -138,38 +182,45 @@ def teams_playing_on(game_day: date, schedule: dict = None) -> Set[str]:
         print(f"[teams_playing_on] (local JSON) {game_day}: {sorted(playing)}")
         return playing
 
-    # --- 2) Fallback: RapidAPI schedule for that date ---
+    # --- 2) Fallback: live ScoreBoard for today's games ---
     try:
-        api_data = fetch_games_by_date(game_day)
+        today_la = _la_today()
+        if game_day != today_la:
+            print(
+                f"[teams_playing_on] no schedule for {game_day}, "
+                f"and live scoreboard is only for {today_la}; skipping fallback."
+            )
+            return playing
+
+        api_data = fetch_nba_live_games()
         games = api_data.get("response", []) or []
+
         for g in games:
             teams = g.get("teams", {}) or {}
             home = teams.get("home", {}) or {}
-            away = teams.get("visitors", {}) or {}  # note: 'visitors' in this API
+            away = teams.get("visitors", {}) or {}
 
             home_code = home.get("code")
             away_code = away.get("code")
 
             if home_code:
-                playing.add(home_code.upper())
+                playing.add(canonical_team(home_code))
             if away_code:
-                playing.add(away_code.upper())
+                playing.add(canonical_team(away_code))
 
-        print(f"[teams_playing_on] (RapidAPI) {game_day}: {sorted(playing)}")
+        print(f"[teams_playing_on] (live scoreboard) {game_day}: {sorted(playing)}")
     except Exception as e:
-        print(f"[teams_playing_on] RapidAPI fallback failed for {game_day}: {e}")
+        print(f"[teams_playing_on] live scoreboard fallback failed for {game_day}: {e}")
 
     return playing
 
 
-def is_team_playing_on(team: str | None, game_day: date, schedule: dict = None) -> bool:
+def is_team_playing_on(
+    team: Optional[str],
+    game_day: Union[date, datetime],
+    schedule: Optional[dict] = None
+) -> bool:
     team_can = canonical_team(team)
     if team_can is None:
         return False
     return team_can in teams_playing_on(game_day, schedule)
-
-
-
-# Example usage
-#print("yay")
-#print(fetch_nba_playByplay('ad3128ea-6925-407c-a5a0-f04c12e25521'))

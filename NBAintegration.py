@@ -1,6 +1,7 @@
 # nba_integration.py
 import unicodedata
 from nba_api.stats.static import players as nba_players
+from nba_api.live.nba.endpoints import scoreboard
 
 from nba_api.stats.static import players as static_players
 from nba_api.stats.endpoints import playergamelog
@@ -240,3 +241,10 @@ def build_fantasy_history_for_player(nba_player_id: int, season: str = "2025-26"
         })
 
     return history
+
+def test():
+    games = scoreboard.ScoreBoard()
+    print("Current NBA games scoreboard:")
+    print(games.get_json())
+if __name__ == "__main__":
+    test()
