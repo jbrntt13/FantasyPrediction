@@ -262,12 +262,15 @@ if __name__ == "__main__":
 
     print(f"Simulating today's matchups ({data['date']})...")
 
+    proj_scores = data.get("proj_scores", {})
+    win_probs = data.get("win_probs", {})
+
     for m in data["matchups"]:
         print("\n---------------------------------------")
         print(f"{m['home_team']} vs {m['away_team']}")
         print(f"Trials: {m['trials']}")
-        print(f"Sim avg {m['home_team']}: {m['home_avg']:.1f}")
-        print(f"Sim avg {m['away_team']}: {m['away_avg']:.1f}")
-        print(f"{m['home_team']} win prob: {m['home_win_prob']*100:.2f}%")
-        print(f"{m['away_team']} win prob: {m['away_win_prob']*100:.2f}%")
+        print(f"Sim avg {m['home_team']}: {m['home_avg']:.1f} (orig proj: {proj_scores.get(m['home_team'], 0):.1f})")
+        print(f"Sim avg {m['away_team']}: {m['away_avg']:.1f} (orig proj: {proj_scores.get(m['away_team'], 0):.1f})")
+        print(f"{m['home_team']} win prob: {m['home_win_prob']*100:.2f}% (orig: {win_probs.get(m['home_team'], 0)*100:.2f}%)")
+        print(f"{m['away_team']} win prob: {m['away_win_prob']*100:.2f}% (orig: {win_probs.get(m['away_team'], 0)*100:.2f}%)")
         print(f"Tie prob: {m['tie_prob']*100:.2f}%")

@@ -1,16 +1,17 @@
-# live_odds.py
-
 import json
 import random
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any
-from fantasy import league  # you already have this in other files
-import requests
-from nba_api.stats.endpoints import ScoreboardV2, BoxScoreTraditionalV2
+from time import sleep
+
 from zoneinfo import ZoneInfo
 
 from fantasy import league  # your ESPN league object
+
+# NEW: use nba_api.live scoreboard instead of HTTP APIs
+from nba_api.live.nba.endpoints import scoreboard as live_scoreboard
+from nba_api.stats.endpoints import BoxScoreTraditionalV2
 
 
 # -----------------------------
@@ -91,66 +92,102 @@ def map_pro_team_to_nba(pro_team: str | None) -> str | None:
     return ESPN_TO_NBA.get(pro_team, pro_team)
 
 
-def fetch_nba_live_games_old():
-    url = "https://api-nba-v1.p.rapidapi.com/games"
-    querystring = {"live": "all"}
+# -----------------------------
+# NEW: live games via nba_api.live scoreboard
+# -----------------------------
 
-    headers = {
-        "x-rapidapi-key": "d4bfbc4596msh7f5df671e47c27dp1af307jsn849a11cfef2a",
-        "x-rapidapi-host": "api-nba-v1.p.rapidapi.com"
-    }
+def fetch_nba_live_games() -> dict:
+    """
+    Use nba_api.live.nba.endpoints.scoreboard.ScoreBoard to get today's games.
 
-    resp = requests.get(url, headers=headers, params=querystring)
-    resp.raise_for_status()
-    data = resp.json()
-    # DEBUG
-    print(data)
-    print("yay")
-    return data
+    Normalize into a shape that matches what build_live_team_fraction_map()
+    expects:
 
-def fetch_nba_live_games():
-    url = "https://v1.basketball.api-sports.io/games"
-    la_tz = ZoneInfo("America/Los_Angeles")
-    today = datetime.now(tz=ZoneInfo("UTC")).astimezone(la_tz)
-    date_str = (today.date() + timedelta(days=1)).isoformat()  # tomorrow's date
-    querystring = {
-        "league": 12,
-        "season": "2025-2026",
-        "date": date_str,
-    }
+        {
+          "response": [
+            {
+              "gameId": "...",
+              "gameStatus": int,          # 1 not started, 2 live, 3 final
+              "gameStatusText": "...",
+              "period": int,             # current period
+              "gameClock": "MM:SS" or "",
+              "regulationPeriods": int,
+              "teams": {
+                "home": {"code": "MEM"},
+                "visitors": {"code": "UTA"},
+              },
+            },
+            ...
+          ]
+        }
+    """
+    sb = live_scoreboard.ScoreBoard()
+    data = sb.get_dict()
 
-    headers = {
-        "x-apisports-key": "708d7918ac2f9fd942b464d77160c20c",
-    }
+    response = []
+    for g in data.get("scoreboard", {}).get("games", []):
+        home = g.get("homeTeam", {}) or {}
+        away = g.get("awayTeam", {}) or {}
 
-    resp = requests.get(url, headers=headers, params=querystring)
-    resp.raise_for_status()
-    data = resp.json()
-    # DEBUG
-    print("yay")
-    return data
+        response.append(
+            {
+                "gameId": g.get("gameId"),
+                "gameStatus": g.get("gameStatus"),
+                "gameStatusText": g.get("gameStatusText"),
+                "period": g.get("period", 0),
+                "gameClock": g.get("gameClock", ""),
+                "regulationPeriods": g.get("regulationPeriods", 4),
+                "teams": {
+                    "home": {"code": home.get("teamTricode")},
+                    "visitors": {"code": away.get("teamTricode")},
+                },
+            }
+        )
+
+    # DEBUG if you want:
+    # print(json.dumps({"response": response}, indent=2))
+    return {"response": response}
+
+
+# OLD API functions kept only if you want to keep the history;
+# they are no longer used anywhere:
+#
+# def fetch_nba_live_games_old(): ...
+# def fetch_nba_live_games_apisports(): ...
+
 
 def compute_game_fraction_from_api_nba(game: dict) -> float:
     """
-    Compute fraction of the game completed using API-NBA structure:
-    game["periods"]["current"], game["periods"]["total"], game["status"]["clock"]
+    Compute fraction of the game completed using the *live scoreboard* structure:
+
+        game["gameStatus"]      # 1 not started, 2 in progress, 3 final
+        game["period"]          # current period (1..4, 5+ for OT)
+        game["gameClock"]       # "MM:SS" or ""
+        game["regulationPeriods"]  # usually 4
+
+    We'll treat regulation periods as 12 minutes each, and OT as 5 minutes.
+    This doesn't need to be perfect, just "good enough" for your sim.
     """
-    periods = game.get("periods", {}) or {}
-    current = periods.get("current") or 0
-    total = periods.get("total") or 4
+    status = int(game.get("gameStatus", 0))
 
-    status = game.get("status", {}) or {}
-    clock = status.get("clock")  # e.g. "7:58", or maybe None/""
-
-    if not total or total <= 0:
-        total = 4
-
-    total_minutes = total * 12.0
-
-    if current == 0:
+    # 1 = not started, 3 = final
+    if status == 1:
         return 0.0
+    if status == 3:
+        return 1.0
 
-    # If we have a proper clock like "7:58"
+    period = int(game.get("period") or 1)
+    clock = game.get("gameClock") or ""
+    total_reg_periods = int(game.get("regulationPeriods") or 4)
+
+    # Basic lengths
+    REG_MIN = 12.0
+    OT_MIN = 5.0
+
+    # total regulation minutes (we don't know how many OT we'll get ahead of time)
+    total_minutes = total_reg_periods * REG_MIN
+
+    # Parse clock "MM:SS"
     if isinstance(clock, str) and ":" in clock:
         try:
             mins, secs = clock.split(":")
@@ -158,15 +195,28 @@ def compute_game_fraction_from_api_nba(game: dict) -> float:
             secs = int(secs)
             minutes_left_in_period = mins + secs / 60.0
         except Exception:
-            minutes_left_in_period = 6.0  # shrug
+            minutes_left_in_period = REG_MIN / 2.0
     else:
-        # No clock? assume halfway through current period
-        minutes_left_in_period = 6.0
+        # If there's no clock info, assume halfway through the current period
+        minutes_left_in_period = REG_MIN / 2.0
 
-    minutes_elapsed = (current - 1) * 12.0 + (12.0 - minutes_left_in_period)
+    # Determine length of current period (reg vs OT)
+    if period <= total_reg_periods:
+        period_length = REG_MIN
+    else:
+        period_length = OT_MIN
+
+    # Minutes before this period
+    completed_reg_periods = max(0, min(period - 1, total_reg_periods))
+    completed_ot_periods = max(0, (period - 1) - total_reg_periods)
+
+    minutes_before = completed_reg_periods * REG_MIN + completed_ot_periods * OT_MIN
+    minutes_elapsed = minutes_before + (period_length - minutes_left_in_period)
+
     frac = minutes_elapsed / total_minutes
-    return max(0.0, min(1.0, frac))
 
+    # Clamp to [0, 1] so OT doesn't blow it up too badly
+    return max(0.0, min(1.0, frac))
 
 
 def get_game_row(games_df, game_id: str):
@@ -179,6 +229,10 @@ def get_game_row(games_df, game_id: str):
 def game_fraction_done(game_row) -> float:
     """
     Estimate how much of the game is completed (0.0–1.0) from ScoreboardV2 game_header row.
+
+    NOTE: This is an older helper that used the stats ScoreboardV2 DF.
+    Keeping it in case you still use it somewhere else, but your main
+    live pipeline uses compute_game_fraction_from_api_nba now.
     """
     status = game_row["GAME_STATUS_ID"]
 
@@ -226,6 +280,7 @@ def get_player_partial_boxscore(game_id: str, nba_player_id: int):
     """
     Fetch the partial boxscore row for a given player in a given game.
     """
+    sleep(2)  # avoid nba_api rate limiting
     box = BoxScoreTraditionalV2(game_id=game_id)
     stats_df = box.player_stats.get_data_frame()
     row = stats_df[stats_df["PLAYER_ID"] == nba_player_id]
@@ -281,8 +336,6 @@ def compute_fantasy_from_stat_row(row) -> float:
 
     return float(score)
 
-from fantasy import league  # you already have this in other files
-
 
 def build_fantasy_points_map() -> dict[int, float]:
     """
@@ -305,7 +358,7 @@ def build_live_state_for_league(
     game_day: date | None = None,
 ) -> dict[int, dict]:
     """
-    Use API-NBA (RapidAPI) to see which teams have live games and
+    Use live NBA scoreboard to see which teams have live games and
     ESPN's own box_scores to get current fantasy points.
 
     Returns: dict[espn_player_id] = {
@@ -343,9 +396,11 @@ def build_live_state_for_league(
     print(f"[build_live_state_for_league] live_state players: {len(live_state)}")
     return live_state
 
+
 def build_live_team_fraction_map() -> dict[str, float]:
     """
-    Returns a dict like {"NOP": 0.42, "BKN": 0.42} for all currently live games.
+    Returns a dict like {"NOP": 0.42, "BKN": 0.42} for all currently live games,
+    using the nba_api.live scoreboard wrapper.
     """
     data = fetch_nba_live_games()
     games = data.get("response", []) or []
@@ -370,7 +425,6 @@ def build_live_team_fraction_map() -> dict[str, float]:
 
     print("[build_live_team_fraction_map] team_frac:", team_frac)
     return team_frac
-
 
 
 # -----------------------------
@@ -508,7 +562,7 @@ def find_matchup_box(team_name_a: str, team_name_b: str):
 
 
 if __name__ == "__main__":
-    
+
     history = load_history()
 
     TEAM_A_NAME = "Team Burnett"
