@@ -3,13 +3,16 @@
 import json
 import time
 from datetime import date, timedelta
-
+from datetime import datetime
+from zoneinfo import ZoneInfo
+from pathlib import Path
 from fantasy import league
 from nbaTest import teams_playing_on
 from simulate_matchup import (
     load_history,
     active_player_entries,
     team_score_once,
+    run_today_matchups,
 )
 
 
@@ -44,7 +47,7 @@ def build_entries_for_range(team, history_map, start_day: date, end_day: date):
     while day <= end_day:
         playing_teams = teams_playing_on(day)
 
-        print(f"\n[{day}] NBA teams playing: {sorted(playing_teams)}")
+        #print(f"\n[{day}] NBA teams playing: {sorted(playing_teams)}")
 
         entries = active_player_entries(
             team=team,
@@ -53,12 +56,9 @@ def build_entries_for_range(team, history_map, start_day: date, end_day: date):
             playing_teams=playing_teams,
         )
 
-        print(
-            f"[{day}] Active players for {team.team_name}: "
-            f"{len(entries)}"
-        )
-        for p, _dist in entries:
-            print(f"    - {p.name} (proTeam={getattr(p, 'proTeam', None)})")
+        #print( f"[{day}] Active players for {team.team_name}: " f"{len(entries)}" )
+        #for p, _dist in entries:
+            #print(f"    - {p.name} (proTeam={getattr(p, 'proTeam', None)})")
 
         entries_by_day[day] = entries
         day += timedelta(days=1)
@@ -108,10 +108,10 @@ def monte_carlo_week(
     )
 
     # Precompute entries per day per team
-    print(f"\n=== Precomputing active players for {team1.team_name} ===")
+    #print(f"\n=== Precomputing active players for {team1.team_name} ===")
     t1_entries_by_day = build_entries_for_range(team1, history_map, start_day, end_day)
 
-    print(f"\n=== Precomputing active players for {team2.team_name} ===")
+    #print(f"\n=== Precomputing active players for {team2.team_name} ===")
     t2_entries_by_day = build_entries_for_range(team2, history_map, start_day, end_day)
 
     # Quick sanity check
@@ -177,16 +177,63 @@ def monte_carlo_week(
         "daily_avgs": daily_avgs,
     }
 
-
+LA = ZoneInfo("America/Los_Angeles")
 def run_weekly_matchups(trials: int = 10000, save: bool = True):
     """
     Simulate weekly odds for all current matchups and return a dict with
     per-matchup odds and per-day projected scoring.
     """
-
+    start_ts = time.time()
     hist = load_history()
-    today = date.today()
+    #today = date.today()
+    today = datetime.now(tz=ZoneInfo("UTC")).astimezone(LA)
     week_start, week_end = week_bounds_from_today(today)
+    cache_file = Path(f"{week_start.isoformat()}_weekly_odds.json")
+    today_data = run_today_matchups(trials=trials)
+    today_current_scores = today_data.get("current_scores", {}) if today_data else {}
+    today_is_live = today_data.get("is_live") if today_data else None
+
+    cached_proj_scores = None
+    cached_win_probs = None
+    cached_current_scores = None
+    if cache_file.exists():
+        try:
+            with cache_file.open("r", encoding="utf-8") as f:
+                cached = json.load(f)
+            cached_proj_scores = cached.get("proj_scores")
+            cached_win_probs = cached.get("win_probs")
+            cached_current_scores = cached.get("current_scores")
+            # Backfill from matchups if top-level maps are missing or legacy formatted
+            matchups_cached = cached.get("matchups", [])
+            if (cached_proj_scores is None or cached_win_probs is None) and matchups_cached:
+                proj_tmp = {}
+                win_tmp = {}
+                for m in matchups_cached:
+                    home = m.get("home_team")
+                    away = m.get("away_team")
+                    if home:
+                        proj_tmp[home] = m.get("home_avg")
+                        win_tmp[home] = m.get("home_win_prob")
+                    if away:
+                        proj_tmp[away] = m.get("away_avg")
+                        win_tmp[away] = m.get("away_win_prob")
+                if cached_proj_scores is None:
+                    cached_proj_scores = proj_tmp
+                if cached_win_probs is None:
+                    cached_win_probs = win_tmp
+            print(f"[run_weekly_matchups] loaded cached weekly projections from {cache_file.name}")
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"[run_weekly_matchups] failed to read cached weekly projections: {exc}")
+
+    if not today_current_scores and cached_current_scores:
+        today_current_scores = cached_current_scores
+    if today_is_live is None and cache_file.exists():
+        try:
+            with cache_file.open("r", encoding="utf-8") as f:
+                cached = json.load(f)
+            today_is_live = cached.get("is_live")
+        except Exception:
+            pass
 
     results_list = []
 
@@ -203,6 +250,15 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
             trials=trials,
         )
 
+        today_iso = today.isoformat()
+        home_current = today_current_scores.get(home_team.team_name)
+        away_current = today_current_scores.get(away_team.team_name)
+        if today_iso in res["daily_avgs"]:
+            if home_current is not None:
+                res["daily_avgs"][today_iso]["team1"] = home_current
+            if away_current is not None:
+                res["daily_avgs"][today_iso]["team2"] = away_current
+
         results_list.append({
             "home_team": home_team.team_name,
             "away_team": away_team.team_name,
@@ -215,23 +271,45 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
             "home_team_url": home_team.logo_url,
             "away_team_url": away_team.logo_url,
             "daily_scores": res["daily_avgs"],
+            "home_current_score": home_current,
+            "away_current_score": away_current,
         })
+
+    proj_scores = {}
+    win_probs = {}
+    for m in results_list:
+        proj_scores[m["home_team"]] = m["home_avg"]
+        proj_scores[m["away_team"]] = m["away_avg"]
+        win_probs[m["home_team"]] = m["home_win_prob"]
+        win_probs[m["away_team"]] = m["away_win_prob"]
+
+    if cached_proj_scores:
+        proj_scores = cached_proj_scores
+    if cached_win_probs:
+        win_probs = cached_win_probs
 
     result = {
         "week_start": week_start.isoformat(),
         "week_end": week_end.isoformat(),
         "matchups": results_list,
+        "proj_scores": proj_scores,
+        "win_probs": win_probs,
+        "current_scores": today_current_scores,
+        "is_live": today_is_live,
+        "date": today.date().isoformat(),
         "runtime_seconds": round(time.time() - start_ts, 2),
     }
 
-    if save:
-        filename = f"{week_start.isoformat()}_weekly_odds.json"
+    if save and not cache_file.exists():
+        filename = cache_file.name
         try:
             with open(filename, "w", encoding="utf-8") as f:
                 json.dump(result, f, indent=2)
             print(f"[run_weekly_matchups] saved weekly odds to {filename}")
         except OSError as exc:
             print(f"[run_weekly_matchups] could not write {filename}: {exc}")
+    elif save:
+        print(f"[run_weekly_matchups] cache file already exists, not overwriting: {cache_file.name}")
 
     return result
 
@@ -239,19 +317,21 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
 if __name__ == "__main__":
     start_ts = time.time()
     data = run_weekly_matchups(trials=10000, save=True)
+    proj_scores = data.get("proj_scores", {})
+    win_probs = data.get("win_probs", {})
     print(f"Weekly simulations for {data['week_start']} → {data['week_end']}")
     for m in data["matchups"]:
         print("\n---------------------------------------")
         print(f"{m['home_team']} vs {m['away_team']}")
         print(f"Trials: {m['trials']}")
-        print(f"Avg score {m['home_team']}: {m['home_avg']:.1f}")
-        print(f"Avg score {m['away_team']}: {m['away_avg']:.1f}")
-        print(f"{m['home_team']} win prob: {m['home_win_prob']*100:.2f}%")
-        print(f"{m['away_team']} win prob: {m['away_win_prob']*100:.2f}%")
+        print(f"Avg score {m['home_team']}: {m['home_avg']:.1f} (orig proj: {proj_scores.get(m['home_team'], 0):.1f})")
+        print(f"Avg score {m['away_team']}: {m['away_avg']:.1f} (orig proj: {proj_scores.get(m['away_team'], 0):.1f})")
+        print(f"{m['home_team']} win prob: {m['home_win_prob']*100:.2f}% (orig: {win_probs.get(m['home_team'], 0)*100:.2f}%)")
+        print(f"{m['away_team']} win prob: {m['away_win_prob']*100:.2f}% (orig: {win_probs.get(m['away_team'], 0)*100:.2f}%)")
         print(f"Tie prob: {m['tie_prob']*100:.2f}%")
         print("Daily projected averages:")
         for day, scores in sorted(m["daily_scores"].items()):
             print(f"  {day}: {m['home_team']} {scores['team1']:.1f} | {m['away_team']} {scores['team2']:.1f}")
 
     runtime = round(time.time() - start_ts, 2)
-    print(f"\nTotal runtime: {runtime}s")
+    print(f"\nTotal runtime: {runtime}s (cached calc: {data.get('runtime_seconds', 'N/A')}s)")

@@ -1,0 +1,215 @@
+{
+  "week_start": "2025-12-15T15:41:34.883834-08:00",
+  "week_end": "2025-12-21T15:41:34.883834-08:00",
+  "matchups": [
+    {
+      "home_team": "Sharpe Shooters",
+      "away_team": "Sarr Fox 64",
+      "home_avg": 1566.7878,
+      "away_avg": 1805.8423,
+      "home_win_prob": 0.0434,
+      "away_win_prob": 0.9559,
+      "tie_prob": 0.0007,
+      "trials": 10000,
+      "home_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/Mascots/mascots-4.svg",
+      "away_team_url": "https://i.imgur.com/NIrlLQz.png",
+      "daily_scores": {
+        "2025-12-15T15:41:34.883834-08:00": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-16T15:41:34.883834-08:00": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-17T15:41:34.883834-08:00": {
+          "team1": 0.0,
+          "team2": 48.4594
+        },
+        "2025-12-18T15:41:34.883834-08:00": {
+          "team1": 460.8966,
+          "team2": 517.5611
+        },
+        "2025-12-19T15:41:34.883834-08:00": {
+          "team1": 188.9253,
+          "team2": 388.9427
+        },
+        "2025-12-20T15:41:34.883834-08:00": {
+          "team1": 321.8811,
+          "team2": 176.1954
+        },
+        "2025-12-21T15:41:34.883834-08:00": {
+          "team1": 368.6148,
+          "team2": 388.6665
+        }
+      },
+      "home_current_score": 0.0,
+      "away_current_score": 0.0
+    },
+    {
+      "home_team": "Luka's Ozempic Dealer",
+      "away_team": "Team Burnett",
+      "home_avg": 1122.4366,
+      "away_avg": 1303.9364,
+      "home_win_prob": 0.0692,
+      "away_win_prob": 0.9301,
+      "tie_prob": 0.0007,
+      "trials": 10000,
+      "home_team_url": "https://mystique-api.fantasy.espn.com/apis/v1/domains/lm/images/ee16f470-af58-11f0-b1c3-bf61c28fbeb9",
+      "away_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/TeamMascots-RobbHarskamp/Team_Mascots-05.svg",
+      "daily_scores": {
+        "2025-12-15T15:41:34.883834-08:00": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-16T15:41:34.883834-08:00": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-17T15:41:34.883834-08:00": {
+          "team1": 123.6377,
+          "team2": 96.6074
+        },
+        "2025-12-18T15:41:34.883834-08:00": {
+          "team1": 353.7687,
+          "team2": 370.2851
+        },
+        "2025-12-19T15:41:34.883834-08:00": {
+          "team1": 147.9321,
+          "team2": 113.2037
+        },
+        "2025-12-20T15:41:34.883834-08:00": {
+          "team1": 328.6648,
+          "team2": 293.77
+        },
+        "2025-12-21T15:41:34.883834-08:00": {
+          "team1": 88.8255,
+          "team2": 216.1019
+        }
+      },
+      "home_current_score": 0.0,
+      "away_current_score": 0.0
+    },
+    {
+      "home_team": "Freaky Friday",
+      "away_team": "DominAYTON",
+      "home_avg": 1354.9643,
+      "away_avg": 1403.5907,
+      "home_win_prob": 0.3458,
+      "away_win_prob": 0.6518,
+      "tie_prob": 0.0024,
+      "trials": 10000,
+      "home_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/StarsAndFlames/stars_flames-7.svg",
+      "away_team_url": "https://mystique-api.fantasy.espn.com/apis/v1/domains/lm/images/537cc390-d618-11f0-b1c3-bf61c28fbeb9",
+      "daily_scores": {
+        "2025-12-15T15:41:34.883834-08:00": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-16T15:41:34.883834-08:00": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-17T15:41:34.883834-08:00": {
+          "team1": 220.8664,
+          "team2": 0.0
+        },
+        "2025-12-18T15:41:34.883834-08:00": {
+          "team1": 269.523,
+          "team2": 386.0679
+        },
+        "2025-12-19T15:41:34.883834-08:00": {
+          "team1": 175.5571,
+          "team2": 160.4832
+        },
+        "2025-12-20T15:41:34.883834-08:00": {
+          "team1": 315.0457,
+          "team2": 358.4539
+        },
+        "2025-12-21T15:41:34.883834-08:00": {
+          "team1": 148.0036,
+          "team2": 185.7012
+        }
+      },
+      "home_current_score": 0.0,
+      "away_current_score": 0.0
+    },
+    {
+      "home_team": "LeBron's Lemmings",
+      "away_team": "Zion's Nutritionist",
+      "home_avg": 1613.441,
+      "away_avg": 1083.946,
+      "home_win_prob": 0.9999,
+      "away_win_prob": 0.0001,
+      "tie_prob": 0.0,
+      "trials": 10000,
+      "home_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/CatsAndDogs/cats_dogs-8.svg",
+      "away_team_url": "https://mystique-api.fantasy.espn.com/apis/v1/domains/lm/images/248a6d10-ad61-11f0-90f7-112fa0f42e74",
+      "daily_scores": {
+        "2025-12-15T15:41:34.883834-08:00": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-16T15:41:34.883834-08:00": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-17T15:41:34.883834-08:00": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-18T15:41:34.883834-08:00": {
+          "team1": 389.0504,
+          "team2": 445.1875
+        },
+        "2025-12-19T15:41:34.883834-08:00": {
+          "team1": 131.8389,
+          "team2": 0.0
+        },
+        "2025-12-20T15:41:34.883834-08:00": {
+          "team1": 429.2098,
+          "team2": 394.7701
+        },
+        "2025-12-21T15:41:34.883834-08:00": {
+          "team1": 234.7725,
+          "team2": 99.8536
+        }
+      },
+      "home_current_score": 0.0,
+      "away_current_score": 0.0
+    }
+  ],
+  "proj_scores": {
+    "Sharpe Shooters": 1566.7878,
+    "Sarr Fox 64": 1805.8423,
+    "Luka's Ozempic Dealer": 1122.4366,
+    "Team Burnett": 1303.9364,
+    "Freaky Friday": 1354.9643,
+    "DominAYTON": 1403.5907,
+    "LeBron's Lemmings": 1613.441,
+    "Zion's Nutritionist": 1083.946
+  },
+  "win_probs": {
+    "Sharpe Shooters": 0.0434,
+    "Sarr Fox 64": 0.9559,
+    "Luka's Ozempic Dealer": 0.0692,
+    "Team Burnett": 0.9301,
+    "Freaky Friday": 0.3458,
+    "DominAYTON": 0.6518,
+    "LeBron's Lemmings": 0.9999,
+    "Zion's Nutritionist": 0.0001
+  },
+  "current_scores": {
+    "Sharpe Shooters": 0.0,
+    "Sarr Fox 64": 0.0,
+    "Luka's Ozempic Dealer": 0.0,
+    "Team Burnett": 0.0,
+    "Freaky Friday": 0.0,
+    "DominAYTON": 0.0,
+    "LeBron's Lemmings": 0.0,
+    "Zion's Nutritionist": 0.0
+  },
+  "is_live": false,
+  "date": "2025-12-15",
+  "runtime_seconds": 1.03
+}

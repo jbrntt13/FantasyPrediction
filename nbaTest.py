@@ -72,6 +72,7 @@ def fetch_nba_live_games() -> dict:
           ]
         }
     """
+    print("[fetch_nba_live_games] API call to nba_api.live scoreboard")
     games = live_scoreboard.ScoreBoard()
     data = games.get_dict()
 
@@ -179,7 +180,7 @@ def teams_playing_on(
                 playing.add(away_tri.upper())
 
     if playing:
-        print(f"[teams_playing_on] (local JSON) {game_day}: {sorted(playing)}")
+        #print(f"[teams_playing_on] (local JSON) {game_day}: {sorted(playing)}")
         return playing
 
     # --- 2) Fallback: live ScoreBoard for today's games ---
@@ -187,8 +188,7 @@ def teams_playing_on(
         today_la = _la_today()
         if game_day != today_la:
             print(
-                f"[teams_playing_on] no schedule for {game_day}, "
-                f"and live scoreboard is only for {today_la}; skipping fallback."
+                #f"[teams_playing_on] no schedule for {game_day},  and live scoreboard is only for {today_la}; skipping fallback."
             )
             return playing
 
