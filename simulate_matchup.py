@@ -208,7 +208,8 @@ def run_today_matchups(trials: int = 20000):
             print(f"[run_today_matchups] projected scores saved to {filename}")
         except OSError as exc:
             print(f"[run_today_matchups] could not write {filename}: {exc}")
-
+    else:
+        print(f"[run_today_matchups] NBA games are live; not saving projections.")
     return result
 
 

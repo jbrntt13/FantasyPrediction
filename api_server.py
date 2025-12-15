@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from simulate_matchup import run_today_matchups, run_custom_matchup
+from weekly_sim import run_weekly_matchups
 from patch_missing_players import main as patch_missing_players_main
 app = FastAPI(title="Fantasy Live Odds API")
 
@@ -37,6 +38,11 @@ def odds_today(trials: int = 20000):
       - current_scores: per-team current score (live ESPN feed)
     """
     data = run_today_matchups(trials=trials)
+    return data
+
+@app.get("/odds/weekly")
+def odds_weekly(trials: int = 20000):
+    data = run_weekly_matchups(trials=10000, save=True)
     return data
 
 @app.get("/patch_missing_players")

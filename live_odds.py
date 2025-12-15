@@ -380,11 +380,15 @@ def build_live_state_for_league(
             if not nba_team:
                 continue
 
-            frac = team_frac.get(nba_team.upper())
-            if frac is None:
+            info = team_frac.get(nba_team.upper())
+            if not info:
                 # this team is not currently in a live game
                 continue
+            if info.get("status") != 2:
+                # not live (1 = not started, 3 = final)
+                continue
 
+            frac = info.get("fraction", 0.0)
             fp_so_far = points_map.get(p.playerId, 0.0)
 
             live_state[p.playerId] = {
@@ -399,16 +403,18 @@ def build_live_state_for_league(
 
 def build_live_team_fraction_map() -> dict[str, float]:
     """
-    Returns a dict like {"NOP": 0.42, "BKN": 0.42} for all currently live games,
-    using the nba_api.live scoreboard wrapper.
+    Returns a dict keyed by team code for games returned by the live scoreboard:
+      {"NOP": {"fraction": 0.42, "status": 2}, ...}
+    We only treat status==2 as live; status 1 = not started, 3 = final.
     """
     data = fetch_nba_live_games()
     games = data.get("response", []) or []
-    team_frac = {}
+    team_frac: dict[str, dict] = {}
 
     print(f"[build_live_team_fraction_map] live games count: {len(games)}")
 
     for g in games:
+        status = int(g.get("gameStatus", 0) or 0)
         frac = compute_game_fraction_from_api_nba(g)
 
         teams = g.get("teams", {}) or {}
@@ -419,9 +425,9 @@ def build_live_team_fraction_map() -> dict[str, float]:
         away_code = away.get("code")
 
         if home_code:
-            team_frac[home_code.upper()] = frac
+            team_frac[home_code.upper()] = {"fraction": frac, "status": status}
         if away_code:
-            team_frac[away_code.upper()] = frac
+            team_frac[away_code.upper()] = {"fraction": frac, "status": status}
 
     print("[build_live_team_fraction_map] team_frac:", team_frac)
     return team_frac

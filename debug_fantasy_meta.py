@@ -3,6 +3,20 @@ from fantasy import league
 def main():
     # ... everything you already have ...
 
+    print("=== league (raw) ===")
+    try:
+        print(league)  # __repr__ often shows league id/name
+    except Exception as exc:
+        print(f"Could not print league repr: {exc}")
+
+    print("\n=== league.__dict__ ===")
+    try:
+        print(vars(league))
+    except TypeError:
+        print("vars(league) not supported")
+    except Exception as exc:
+        print(f"Could not dump vars(league): {exc}")
+
     settings = getattr(league, "settings", None)
     if not settings:
         print("\nNo settings object found on league.")

@@ -1,6 +1,7 @@
 # weekly_sim.py
 
 import json
+import time
 from datetime import date, timedelta
 
 from fantasy import league
@@ -124,26 +125,44 @@ def monte_carlo_week(
 
     t1_wins = t2_wins = ties = 0
     sum_t1 = sum_t2 = 0.0
+    all_days = sorted(set(t1_entries_by_day.keys()) | set(t2_entries_by_day.keys()))
+    day_sums_t1 = {d: 0.0 for d in all_days}
+    day_sums_t2 = {d: 0.0 for d in all_days}
 
     for _ in range(trials):
-        s1, s2 = simulate_full_week_once(
-            t1_entries_by_day,
-            t2_entries_by_day,
-            history_map,
-        )
+        weekly_t1 = 0.0
+        weekly_t2 = 0.0
 
-        sum_t1 += s1
-        sum_t2 += s2
+        for day in all_days:
+            t1_entries = t1_entries_by_day.get(day, [])
+            t2_entries = t2_entries_by_day.get(day, [])
+            s1_day = team_score_once(t1_entries, history_map)
+            s2_day = team_score_once(t2_entries, history_map)
+            weekly_t1 += s1_day
+            weekly_t2 += s2_day
+            day_sums_t1[day] += s1_day
+            day_sums_t2[day] += s2_day
 
-        if s1 > s2:
+        sum_t1 += weekly_t1
+        sum_t2 += weekly_t2
+
+        if weekly_t1 > weekly_t2:
             t1_wins += 1
-        elif s2 > s1:
+        elif weekly_t2 > weekly_t1:
             t2_wins += 1
         else:
             ties += 1
 
     avg_t1 = sum_t1 / trials
     avg_t2 = sum_t2 / trials
+
+    daily_avgs = {
+        d.isoformat(): {
+            "team1": day_sums_t1[d] / trials,
+            "team2": day_sums_t2[d] / trials,
+        }
+        for d in all_days
+    }
 
     return {
         "team1_wins": t1_wins,
@@ -155,70 +174,84 @@ def monte_carlo_week(
         "avg_team1": avg_t1,
         "avg_team2": avg_t2,
         "trials": trials,
+        "daily_avgs": daily_avgs,
     }
 
 
-if __name__ == "__main__":
+def run_weekly_matchups(trials: int = 10000, save: bool = True):
+    """
+    Simulate weekly odds for all current matchups and return a dict with
+    per-matchup odds and per-day projected scoring.
+    """
+
     hist = load_history()
     today = date.today()
-
-    # Pick the matchup you care about.
-    TEAM_A_NAME = "LeBron's Lemmings"
-    TEAM_B_NAME = "DominAYTON"
-
-    # Find the weekly box score / matchup so we can confirm teams
-    box_scores = league.box_scores(matchup_total=True)
-
-    target_box = None
-    for box in box_scores:
-        names = {box.home_team.team_name, box.away_team.team_name}
-        if TEAM_A_NAME in names and TEAM_B_NAME in names:
-            target_box = box
-            break
-
-    if target_box is None:
-        raise RuntimeError(f"Could not find matchup {TEAM_A_NAME} vs {TEAM_B_NAME}")
-
-    # Figure out which is team1 vs team2
-    if target_box.home_team.team_name == TEAM_A_NAME:
-        team1 = target_box.home_team
-        team2 = target_box.away_team
-        current_t1 = target_box.home_score
-        current_t2 = target_box.away_score
-    else:
-        team1 = target_box.away_team
-        team2 = target_box.home_team
-        current_t1 = target_box.away_score
-        current_t2 = target_box.home_score
-
-    print(f"Matchup: {TEAM_A_NAME} vs {TEAM_B_NAME}")
-    print(f"Current score (ESPN weekly): "
-          f"{TEAM_A_NAME} {current_t1:.1f}  |  {TEAM_B_NAME} {current_t2:.1f}")
-
     week_start, week_end = week_bounds_from_today(today)
-    print(f"\nWeek span: {week_start} → {week_end}")
 
-    TRIALS = 10000
-    results = monte_carlo_week(
-        team1,
-        team2,
-        hist,
-        start_day=week_start,
-        end_day=week_end,
-        trials=TRIALS,
-    )
+    results_list = []
 
-    print("\n=======================================")
-    print(f"Trials (full week simulations): {results['trials']}")
-    print(f"Week span: {week_start} → {week_end}")
-    print()
-    print(f"Average simulated {TEAM_A_NAME}: {results['avg_team1']:.1f}")
-    print(f"Average simulated {TEAM_B_NAME}: {results['avg_team2']:.1f}")
-    print()
-    print(f"{TEAM_A_NAME} wins: {results['team1_wins']} "
-          f"({results['p_team1']*100:.2f}%)")
-    print(f"{TEAM_B_NAME} wins: {results['team2_wins']} "
-          f"({results['p_team2']*100:.2f}%)")
-    print(f"Ties: {results['ties']} "
-          f"({results['p_tie']*100:.2f}%)")
-    print("=======================================")
+    for box in league.box_scores(matchup_total=True):
+        home_team = box.home_team
+        away_team = box.away_team
+
+        res = monte_carlo_week(
+            home_team,
+            away_team,
+            hist,
+            start_day=week_start,
+            end_day=week_end,
+            trials=trials,
+        )
+
+        results_list.append({
+            "home_team": home_team.team_name,
+            "away_team": away_team.team_name,
+            "home_avg": res["avg_team1"],
+            "away_avg": res["avg_team2"],
+            "home_win_prob": res["p_team1"],
+            "away_win_prob": res["p_team2"],
+            "tie_prob": res["p_tie"],
+            "trials": res["trials"],
+            "home_team_url": home_team.logo_url,
+            "away_team_url": away_team.logo_url,
+            "daily_scores": res["daily_avgs"],
+        })
+
+    result = {
+        "week_start": week_start.isoformat(),
+        "week_end": week_end.isoformat(),
+        "matchups": results_list,
+        "runtime_seconds": round(time.time() - start_ts, 2),
+    }
+
+    if save:
+        filename = f"{week_start.isoformat()}_weekly_odds.json"
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2)
+            print(f"[run_weekly_matchups] saved weekly odds to {filename}")
+        except OSError as exc:
+            print(f"[run_weekly_matchups] could not write {filename}: {exc}")
+
+    return result
+
+
+if __name__ == "__main__":
+    start_ts = time.time()
+    data = run_weekly_matchups(trials=10000, save=True)
+    print(f"Weekly simulations for {data['week_start']} → {data['week_end']}")
+    for m in data["matchups"]:
+        print("\n---------------------------------------")
+        print(f"{m['home_team']} vs {m['away_team']}")
+        print(f"Trials: {m['trials']}")
+        print(f"Avg score {m['home_team']}: {m['home_avg']:.1f}")
+        print(f"Avg score {m['away_team']}: {m['away_avg']:.1f}")
+        print(f"{m['home_team']} win prob: {m['home_win_prob']*100:.2f}%")
+        print(f"{m['away_team']} win prob: {m['away_win_prob']*100:.2f}%")
+        print(f"Tie prob: {m['tie_prob']*100:.2f}%")
+        print("Daily projected averages:")
+        for day, scores in sorted(m["daily_scores"].items()):
+            print(f"  {day}: {m['home_team']} {scores['team1']:.1f} | {m['away_team']} {scores['team2']:.1f}")
+
+    runtime = round(time.time() - start_ts, 2)
+    print(f"\nTotal runtime: {runtime}s")

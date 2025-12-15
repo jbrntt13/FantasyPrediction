@@ -1,0 +1,175 @@
+{
+  "week_start": "2025-12-15",
+  "week_end": "2025-12-21",
+  "matchups": [
+    {
+      "home_team": "Sharpe Shooters",
+      "away_team": "Sarr Fox 64",
+      "home_avg": 1555.8862,
+      "away_avg": 1805.8019,
+      "home_win_prob": 0.0358,
+      "away_win_prob": 0.964,
+      "tie_prob": 0.0002,
+      "trials": 10000,
+      "home_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/Mascots/mascots-4.svg",
+      "away_team_url": "https://i.imgur.com/NIrlLQz.png",
+      "daily_scores": {
+        "2025-12-15": {
+          "team1": 226.4324,
+          "team2": 285.3081
+        },
+        "2025-12-16": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-17": {
+          "team1": 0.0,
+          "team2": 48.3538
+        },
+        "2025-12-18": {
+          "team1": 457.1869,
+          "team2": 517.3754
+        },
+        "2025-12-19": {
+          "team1": 187.1643,
+          "team2": 389.3432
+        },
+        "2025-12-20": {
+          "team1": 317.6278,
+          "team2": 176.0362
+        },
+        "2025-12-21": {
+          "team1": 367.4748,
+          "team2": 389.3852
+        }
+      }
+    },
+    {
+      "home_team": "Luka's Ozempic Dealer",
+      "away_team": "Team Burnett",
+      "home_avg": 1121.145,
+      "away_avg": 1205.9307,
+      "home_win_prob": 0.2311,
+      "away_win_prob": 0.766,
+      "tie_prob": 0.0029,
+      "trials": 10000,
+      "home_team_url": "https://mystique-api.fantasy.espn.com/apis/v1/domains/lm/images/ee16f470-af58-11f0-b1c3-bf61c28fbeb9",
+      "away_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/TeamMascots-RobbHarskamp/Team_Mascots-05.svg",
+      "daily_scores": {
+        "2025-12-15": {
+          "team1": 79.7481,
+          "team2": 182.4819
+        },
+        "2025-12-16": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-17": {
+          "team1": 123.5145,
+          "team2": 64.6968
+        },
+        "2025-12-18": {
+          "team1": 352.9953,
+          "team2": 369.9857
+        },
+        "2025-12-19": {
+          "team1": 148.469,
+          "team2": 112.1292
+        },
+        "2025-12-20": {
+          "team1": 327.9904,
+          "team2": 259.463
+        },
+        "2025-12-21": {
+          "team1": 88.4277,
+          "team2": 217.1741
+        }
+      }
+    },
+    {
+      "home_team": "Freaky Friday",
+      "away_team": "DominAYTON",
+      "home_avg": 1353.7394,
+      "away_avg": 1156.9347,
+      "home_win_prob": 0.9491,
+      "away_win_prob": 0.0501,
+      "tie_prob": 0.0008,
+      "trials": 10000,
+      "home_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/StarsAndFlames/stars_flames-7.svg",
+      "away_team_url": "https://mystique-api.fantasy.espn.com/apis/v1/domains/lm/images/537cc390-d618-11f0-b1c3-bf61c28fbeb9",
+      "daily_scores": {
+        "2025-12-15": {
+          "team1": 225.6226,
+          "team2": 233.9144
+        },
+        "2025-12-16": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-17": {
+          "team1": 220.5715,
+          "team2": 0.0
+        },
+        "2025-12-18": {
+          "team1": 269.3377,
+          "team2": 342.0475
+        },
+        "2025-12-19": {
+          "team1": 175.56,
+          "team2": 120.7254
+        },
+        "2025-12-20": {
+          "team1": 314.7743,
+          "team2": 354.5783
+        },
+        "2025-12-21": {
+          "team1": 147.8733,
+          "team2": 105.6691
+        }
+      }
+    },
+    {
+      "home_team": "LeBron's Lemmings",
+      "away_team": "Zion's Nutritionist",
+      "home_avg": 1609.4283,
+      "away_avg": 1092.3396,
+      "home_win_prob": 1.0,
+      "away_win_prob": 0.0,
+      "tie_prob": 0.0,
+      "trials": 10000,
+      "home_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/CatsAndDogs/cats_dogs-8.svg",
+      "away_team_url": "https://mystique-api.fantasy.espn.com/apis/v1/domains/lm/images/248a6d10-ad61-11f0-90f7-112fa0f42e74",
+      "daily_scores": {
+        "2025-12-15": {
+          "team1": 428.5945,
+          "team2": 144.2944
+        },
+        "2025-12-16": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-17": {
+          "team1": 0.0,
+          "team2": 0.0
+        },
+        "2025-12-18": {
+          "team1": 388.496,
+          "team2": 448.1025
+        },
+        "2025-12-19": {
+          "team1": 130.8616,
+          "team2": 0.0
+        },
+        "2025-12-20": {
+          "team1": 427.8965,
+          "team2": 397.3458
+        },
+        "2025-12-21": {
+          "team1": 233.5797,
+          "team2": 102.5969
+        }
+      }
+    }
+  ],
+  "runtime_seconds": 0.52
+}
