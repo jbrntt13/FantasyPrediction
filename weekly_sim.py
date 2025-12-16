@@ -185,10 +185,13 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
     """
     start_ts = time.time()
     hist = load_history()
-    #today = date.today()
-    today = datetime.now(tz=ZoneInfo("UTC")).astimezone(LA)
-    week_start, week_end = week_bounds_from_today(today)
-    cache_file = Path(f"{week_start.isoformat()}_weekly_odds.json")
+    # Use date (not datetime) for stable week key and cache naming
+    today_dt = datetime.now(tz=ZoneInfo("UTC")).astimezone(LA)
+    today_date = today_dt.date()
+    week_start, week_end = week_bounds_from_today(today_date)
+    week_start_str = week_start.strftime("%Y-%m-%d")
+    # Align cache naming with daily simulate_matchup convention: YYYY-MM-DD_projScore.json
+    cache_file = Path(f"{week_start_str}_projScore.json")
     today_data = run_today_matchups(trials=trials)
     today_current_scores = today_data.get("current_scores", {}) if today_data else {}
     today_is_live = today_data.get("is_live") if today_data else None
@@ -250,7 +253,7 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
             trials=trials,
         )
 
-        today_iso = today.isoformat()
+        today_iso = today_dt.isoformat()
         home_current = today_current_scores.get(home_team.team_name)
         away_current = today_current_scores.get(away_team.team_name)
         if today_iso in res["daily_avgs"]:
@@ -296,11 +299,11 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
         "win_probs": win_probs,
         "current_scores": today_current_scores,
         "is_live": today_is_live,
-        "date": today.date().isoformat(),
+        "date": today_dt.date().isoformat(),
         "runtime_seconds": round(time.time() - start_ts, 2),
     }
 
-    if save and not cache_file.exists():
+    if not cache_file.exists():
         filename = cache_file.name
         try:
             with open(filename, "w", encoding="utf-8") as f:
@@ -309,7 +312,7 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
         except OSError as exc:
             print(f"[run_weekly_matchups] could not write {filename}: {exc}")
     elif save:
-        print(f"[run_weekly_matchups] cache file already exists, not overwriting: {cache_file.name}")
+        print(f"[run_weekly_matchups] cache file already exists: {cache_file.name}")
 
     return result
 
