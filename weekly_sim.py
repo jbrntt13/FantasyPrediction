@@ -191,7 +191,7 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
     week_start, week_end = week_bounds_from_today(today_date)
     week_start_str = week_start.strftime("%Y-%m-%d")
     # Align cache naming with daily simulate_matchup convention: YYYY-MM-DD_projScore.json
-    cache_file = Path(f"{week_start_str}_projScore.json")
+    cache_file = Path(f"{week_start_str}_weekly_odds.json")
     today_data = run_today_matchups(trials=trials)
     today_current_scores = today_data.get("current_scores", {}) if today_data else {}
     today_is_live = today_data.get("is_live") if today_data else None
@@ -204,7 +204,12 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
             with cache_file.open("r", encoding="utf-8") as f:
                 cached = json.load(f)
             cached_proj_scores = cached.get("proj_scores")
+
             cached_win_probs = cached.get("win_probs")
+            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+            print("Cache file name:", cache_file.name   )
+            print(cached_win_probs) 
+            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             cached_current_scores = cached.get("current_scores")
             # Backfill from matchups if top-level maps are missing or legacy formatted
             matchups_cached = cached.get("matchups", [])
@@ -223,6 +228,8 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
                 if cached_proj_scores is None:
                     cached_proj_scores = proj_tmp
                 if cached_win_probs is None:
+                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+                    print(win_tmp)
                     cached_win_probs = win_tmp
             print(f"[run_weekly_matchups] loaded cached weekly projections from {cache_file.name}")
         except (OSError, json.JSONDecodeError) as exc:
