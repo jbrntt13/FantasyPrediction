@@ -183,6 +183,9 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
     Simulate weekly odds for all current matchups and return a dict with
     per-matchup odds and per-day projected scoring.
     """
+    print("currentMatchupPeriod", league.currentMatchupPeriod)
+    print("scoringPeriodId", league.scoringPeriodId)
+    print("matchup_periods", league.settings.matchup_periods)
     start_ts = time.time()
     hist = load_history()
     # Use date (not datetime) for stable week key and cache naming
@@ -247,7 +250,7 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
 
     results_list = []
 
-    for box in league.box_scores(matchup_total=True):
+    for box in league.box_scores(matchup_total=True, matchup_period=league.currentMatchupPeriod):
         home_team = box.home_team
         away_team = box.away_team
 
