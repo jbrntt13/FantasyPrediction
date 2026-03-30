@@ -15,11 +15,77 @@ Control endpoints (when server is running):
   GET  /demo/status         Show current clock state
 """
 
+import math
 import os
 import json
 import time
 from datetime import date, timedelta
 from pathlib import Path
+
+
+# ─── Stats helpers ────────────────────────────────────────────────────────────
+
+def _normal_cdf(z: float) -> float:
+    """Standard normal CDF via Abramowitz & Stegun (error < 7.5e-8)."""
+    t = 1.0 / (1.0 + 0.2316419 * abs(z))
+    d = 0.3989422820 * math.exp(-z * z / 2.0)
+    p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.7814780 + t * (-1.8212560 + t * 1.3302744))))
+    return (1.0 - p) if z >= 0 else p
+
+
+def _win_prob(h_current: float, a_current: float,
+              h_remaining: float, a_remaining: float) -> tuple[float, float]:
+    """
+    Compute (home_win_prob, away_win_prob) from current scores + remaining projection.
+
+    Uncertainty is proportional to sqrt(remaining / total_projected), so as the
+    week plays out and remaining shrinks, the probability converges to 0 or 1.
+
+    BASE_STD is calibrated so that typical fantasy matchups (~150pt spread on a
+    ~1400pt week) start around 85/15 odds — matching the real Monte Carlo output.
+    """
+    h_final = h_current + h_remaining
+    a_final = a_current + a_remaining
+    diff = h_final - a_final
+
+    total_proj = max(h_final + a_final, 1.0)
+    remaining_frac = (h_remaining + a_remaining) / total_proj
+
+    BASE_STD = 180.0
+    std_dev = BASE_STD * math.sqrt(max(remaining_frac, 0.0))
+
+    if std_dev < 0.5:
+        h_prob = 1.0 if diff > 0 else (0.5 if diff == 0 else 0.0)
+    else:
+        h_prob = _normal_cdf(diff / std_dev)
+
+    return round(h_prob, 4), round(1.0 - h_prob, 4)
+
+
+def _scoring_noise(team_name: str, fraction: float, daily_proj: float) -> float:
+    """
+    Deterministic scoring deviation so demo games feel dynamic.
+
+    Each team gets a unique "luck curve" through the day built from layered
+    sine waves seeded by team name.  The result is a pts offset that can swing
+    a team ±15-20% above/below their daily projection at any point.
+
+    Properties:
+    - Returns 0 when fraction == 0 (no scoring yet → no noise)
+    - Consistent for a given (team, fraction) pair (no randomness)
+    - Different shape per team (seeded by name)
+    """
+    if fraction <= 0:
+        return 0.0
+    seed = int.from_bytes(team_name.encode()[:8], "big") % 100_000
+    s = seed / 100_000.0  # 0-1, unique per team
+    t = fraction * math.pi * 2
+    wave = (math.sin(t * 2.7 + s * 47) * 0.22
+            + math.sin(t * 5.1 + s * 113) * 0.14
+            + math.sin(t * 11.3 + s * 251) * 0.07)
+    # Scale by how much has been scored so far
+    return daily_proj * fraction * wave
+
 
 # ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -217,16 +283,34 @@ def run_demo_today() -> dict:
     for home, away in matchup_pairs:
         h_proj = today_proj.get(home, 0.0)
         a_proj = today_proj.get(away, 0.0)
-        h_current = round(h_proj * frac, 2)
-        a_current = round(a_proj * frac, 2)
+        h_current = round(h_proj * frac + _scoring_noise(home, frac, h_proj), 2)
+        a_current = round(a_proj * frac + _scoring_noise(away, frac, a_proj), 2)
+
+        # Pace-adjusted remaining projection (mirrors run_demo_weekly logic)
+        if frac > 0.05 and h_proj > 0:
+            h_pace = h_current / (h_proj * frac)
+            h_remaining = round(max(0.0, h_proj * (1 - frac) * h_pace), 2)
+        else:
+            h_remaining = round(max(0.0, h_proj - h_current), 2)
+
+        if frac > 0.05 and a_proj > 0:
+            a_pace = a_current / (a_proj * frac)
+            a_remaining = round(max(0.0, a_proj * (1 - frac) * a_pace), 2)
+        else:
+            a_remaining = round(max(0.0, a_proj - a_current), 2)
+
+        # Dynamic projected final and win probability
+        h_proj_final = round(h_current + h_remaining, 2)
+        a_proj_final = round(a_current + a_remaining, 2)
+        h_win_prob, a_win_prob = _win_prob(h_current, a_current, h_remaining, a_remaining)
 
         results.append({
             "home_team": home,
             "away_team": away,
-            "home_avg": h_proj,
-            "away_avg": a_proj,
-            "home_win_prob": today_win_probs.get(home, 0.5),
-            "away_win_prob": today_win_probs.get(away, 0.5),
+            "home_avg": h_proj_final,
+            "away_avg": a_proj_final,
+            "home_win_prob": h_win_prob,
+            "away_win_prob": a_win_prob,
             "tie_prob": today_tie_probs.get(home, 0.0),
             "trials": 10000,
             "home_team_url": team_urls.get(home, ""),
@@ -237,10 +321,10 @@ def run_demo_today() -> dict:
 
         current_scores[home] = h_current
         current_scores[away] = a_current
-        proj_scores[home] = h_proj
-        proj_scores[away] = a_proj
-        win_probs[home] = today_win_probs.get(home, 0.5)
-        win_probs[away] = today_win_probs.get(away, 0.5)
+        proj_scores[home] = h_proj_final
+        proj_scores[away] = a_proj_final
+        win_probs[home] = h_win_prob
+        win_probs[away] = a_win_prob
 
     return {
         "date": demo_today_str,
@@ -306,17 +390,19 @@ def run_demo_weekly() -> dict:
         )
         h_today_current = today_current.get(home, round(h_today_proj * frac, 2))
         a_today_current = today_current.get(away, round(a_today_proj * frac, 2))
-        h_today_remaining = round(max(0.0, h_today_proj - h_today_current), 2)
-        a_today_remaining = round(max(0.0, a_today_proj - a_today_current), 2)
+        # Pace-based remaining: if a team is outscoring their projection,
+        # extrapolate that pace for the rest of the day (and vice versa).
+        if frac > 0.05 and h_today_proj > 0:
+            h_pace = h_today_current / (h_today_proj * frac)
+            h_today_remaining = round(max(0.0, h_today_proj * (1 - frac) * h_pace), 2)
+        else:
+            h_today_remaining = round(max(0.0, h_today_proj - h_today_current), 2)
 
-        # Base accumulated score = ESPN total captured BEFORE today's games started.
-        # This is stored as home_current_score in the weekly cache (which was generated
-        # before today's games began, so it reflects Mon-Thu accumulated total).
-        h_base = float(m.get("home_current_score", 0.0))
-        a_base = float(m.get("away_current_score", 0.0))
-
-        h_total = round(h_base + h_today_current, 2)
-        a_total = round(a_base + a_today_current, 2)
+        if frac > 0.05 and a_today_proj > 0:
+            a_pace = a_today_current / (a_today_proj * frac)
+            a_today_remaining = round(max(0.0, a_today_proj * (1 - frac) * a_pace), 2)
+        else:
+            a_today_remaining = round(max(0.0, a_today_proj - a_today_current), 2)
 
         # Clone daily_scores and update today's entry with live values
         daily_scores = dict(m.get("daily_scores", {}))
@@ -326,13 +412,45 @@ def run_demo_weekly() -> dict:
                 "team2": a_today_current,
             }
 
+        # Base accumulated score = sum of projected daily scores for days before today.
+        # Using projected daily scores (not ESPN actuals) keeps pre-game win
+        # probabilities calibrated to match the cached Monte Carlo output.
+        h_base = sum(float(v.get("team1", 0.0)) for d, v in daily_scores.items() if d < demo_today_str)
+        a_base = sum(float(v.get("team2", 0.0)) for d, v in daily_scores.items() if d < demo_today_str)
+
+        h_total = round(h_base + h_today_current, 2)
+        a_total = round(a_base + a_today_current, 2)
+
+        # Future days: sum projected scores for days after demo_date still in the week
+        h_future = sum(
+            float(v.get("team1", 0.0))
+            for d, v in daily_scores.items()
+            if d > demo_today_str
+        )
+        a_future = sum(
+            float(v.get("team2", 0.0))
+            for d, v in daily_scores.items()
+            if d > demo_today_str
+        )
+
+        # Remaining this week = rest of today + all future days
+        h_remaining = round(h_today_remaining + h_future, 2)
+        a_remaining = round(a_today_remaining + a_future, 2)
+
+        # Dynamic projected final = what's been scored + what's still coming
+        h_proj_final = round(h_total + h_remaining, 2)
+        a_proj_final = round(a_total + a_remaining, 2)
+
+        # Win probability converges as remaining shrinks
+        h_win_prob, a_win_prob = _win_prob(h_total, a_total, h_remaining, a_remaining)
+
         matchups.append({
             "home_team": home,
             "away_team": away,
-            "home_avg": m["home_avg"],
-            "away_avg": m["away_avg"],
-            "home_win_prob": m["home_win_prob"],
-            "away_win_prob": m["away_win_prob"],
+            "home_avg": h_proj_final,
+            "away_avg": a_proj_final,
+            "home_win_prob": h_win_prob,
+            "away_win_prob": a_win_prob,
             "tie_prob": m["tie_prob"],
             "trials": m.get("trials", 10000),
             "home_team_url": m["home_team_url"],
@@ -348,13 +466,19 @@ def run_demo_weekly() -> dict:
             "away_today_remaining_proj": a_today_remaining,
         })
 
+    # Build top-level dicts from the dynamically computed matchup values
+    proj_scores = {m["home_team"]: m["home_avg"] for m in matchups} | \
+                  {m["away_team"]: m["away_avg"] for m in matchups}
+    win_probs   = {m["home_team"]: m["home_win_prob"] for m in matchups} | \
+                  {m["away_team"]: m["away_win_prob"] for m in matchups}
+
     return {
         "week_start": DEMO_WEEK_START.isoformat(),
         "week_end": DEMO_WEEK_END.isoformat(),
         "matchups": matchups,
-        "proj_scores": weekly.get("proj_scores", {}),
-        "win_probs": weekly.get("win_probs", {}),
-        "current_scores": today_current,   # same shape as live (today's scores only)
+        "proj_scores": proj_scores,
+        "win_probs": win_probs,
+        "current_scores": today_current,
         "is_live": is_live,
         "date": demo_today_str,
         "demo_mode": True,
