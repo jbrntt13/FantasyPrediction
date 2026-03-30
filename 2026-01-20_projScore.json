@@ -1,0 +1,92 @@
+{
+  "date": "2026-01-20",
+  "is_live": false,
+  "matchups": [
+    {
+      "home_team": "DominAYTON",
+      "away_team": "Sarr Fox 64",
+      "home_avg": 282.8119,
+      "away_avg": 228.317,
+      "home_win_prob": 0.832,
+      "away_win_prob": 0.163,
+      "tie_prob": 0.005,
+      "trials": 10000,
+      "home_team_url": "https://mystique-api.fantasy.espn.com/apis/v1/domains/lm/images/537cc390-d618-11f0-b1c3-bf61c28fbeb9",
+      "away_team_url": "https://i.imgur.com/NIrlLQz.png",
+      "home_current_score": 316.0,
+      "away_current_score": 149.0
+    },
+    {
+      "home_team": "LeBron's Lemmings",
+      "away_team": "Luka's Ozempic Dealer",
+      "home_avg": 121.2559,
+      "away_avg": 243.3385,
+      "home_win_prob": 0.0043,
+      "away_win_prob": 0.9956,
+      "tie_prob": 0.0001,
+      "trials": 10000,
+      "home_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/CatsAndDogs/cats_dogs-8.svg",
+      "away_team_url": "https://mystique-api.fantasy.espn.com/apis/v1/domains/lm/images/ee16f470-af58-11f0-b1c3-bf61c28fbeb9",
+      "home_current_score": 155.0,
+      "away_current_score": 189.0
+    },
+    {
+      "home_team": "Freaky Friday",
+      "away_team": "Sharpe Shooters",
+      "home_avg": 59.5908,
+      "away_avg": 226.9657,
+      "home_win_prob": 0.0,
+      "away_win_prob": 1.0,
+      "tie_prob": 0.0,
+      "trials": 10000,
+      "home_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/StarsAndFlames/stars_flames-7.svg",
+      "away_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/Mascots/mascots-4.svg",
+      "home_current_score": 67.0,
+      "away_current_score": 249.0
+    },
+    {
+      "home_team": "Zion's Nutritionist",
+      "away_team": "Team Burnett",
+      "home_avg": 92.4856,
+      "away_avg": 63.9604,
+      "home_win_prob": 0.8147,
+      "away_win_prob": 0.1746,
+      "tie_prob": 0.0107,
+      "trials": 10000,
+      "home_team_url": "https://mystique-api.fantasy.espn.com/apis/v1/domains/lm/images/248a6d10-ad61-11f0-90f7-112fa0f42e74",
+      "away_team_url": "https://g.espncdn.com/lm-static/logo-packs/core/TeamMascots-RobbHarskamp/Team_Mascots-05.svg",
+      "home_current_score": 170.0,
+      "away_current_score": 331.0
+    }
+  ],
+  "proj_scores": {
+    "DominAYTON": 282.8119,
+    "Sarr Fox 64": 228.317,
+    "LeBron's Lemmings": 121.2559,
+    "Luka's Ozempic Dealer": 243.3385,
+    "Freaky Friday": 59.5908,
+    "Sharpe Shooters": 226.9657,
+    "Zion's Nutritionist": 92.4856,
+    "Team Burnett": 63.9604
+  },
+  "current_scores": {
+    "DominAYTON": 316.0,
+    "Sarr Fox 64": 149.0,
+    "LeBron's Lemmings": 155.0,
+    "Luka's Ozempic Dealer": 189.0,
+    "Freaky Friday": 67.0,
+    "Sharpe Shooters": 249.0,
+    "Zion's Nutritionist": 170.0,
+    "Team Burnett": 331.0
+  },
+  "win_probs": {
+    "DominAYTON": 0.832,
+    "Sarr Fox 64": 0.163,
+    "LeBron's Lemmings": 0.0043,
+    "Luka's Ozempic Dealer": 0.9956,
+    "Freaky Friday": 0.0,
+    "Sharpe Shooters": 1.0,
+    "Zion's Nutritionist": 0.8147,
+    "Team Burnett": 0.1746
+  }
+}

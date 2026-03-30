@@ -186,11 +186,6 @@ def run_today_matchups(trials: int = 20000):
         win_probs[m["home_team"]] = m["home_win_prob"]
         win_probs[m["away_team"]] = m["away_win_prob"]
 
-    if cached_proj_scores:
-        proj_scores = cached_proj_scores
-    if cached_win_probs:
-        win_probs = cached_win_probs
-
     result = {
         "date": date_str,
         "is_live": is_live,

@@ -17,6 +17,13 @@ def main():
     except Exception as exc:
         print(f"Could not dump vars(league): {exc}")
 
+    print("\n=== Current matchup totals ===")
+    try:
+        for box in league.box_scores(matchup_total=True, matchup_period=(league.currentMatchupPeriod)):
+            print(f"{box.home_team.team_name} {box.home_score} — {box.away_team.team_name} {box.away_score}")
+    except Exception as exc:
+        print(f"Could not fetch current scores: {exc}")
+
     settings = getattr(league, "settings", None)
     if not settings:
         print("\nNo settings object found on league.")

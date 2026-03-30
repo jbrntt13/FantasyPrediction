@@ -196,6 +196,7 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
     # Align cache naming with daily simulate_matchup convention: YYYY-MM-DD_projScore.json
     cache_file = Path(f"{week_start_str}_weekly_odds.json")
     today_data = run_today_matchups(trials=trials)
+    today_proj_scores = today_data.get("proj_scores", {}) if today_data else {}
     today_current_scores = today_data.get("current_scores", {}) if today_data else {}
     today_is_live = today_data.get("is_live") if today_data else None
 
@@ -250,7 +251,7 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
 
     results_list = []
 
-    for box in league.box_scores(matchup_total=True, matchup_period=league.currentMatchupPeriod):
+    for box in league.box_scores(matchup_total=True, matchup_period=(league.currentMatchupPeriod)):
         home_team = box.home_team
         away_team = box.away_team
 
@@ -264,13 +265,24 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
         )
 
         today_iso = today_dt.isoformat()
-        home_current = today_current_scores.get(home_team.team_name)
-        away_current = today_current_scores.get(away_team.team_name)
+        home_current = box.home_score
+        away_current = box.away_score
+        home_today_score = today_current_scores.get(home_team.team_name)
+        away_today_score = today_current_scores.get(away_team.team_name)
+        home_today_total_proj = today_proj_scores.get(home_team.team_name)
+        away_today_total_proj = today_proj_scores.get(away_team.team_name)
+        home_today_remaining_proj = None
+        away_today_remaining_proj = None
+        if home_today_total_proj is not None and home_today_score is not None:
+            home_today_remaining_proj = max(0.0, home_today_total_proj - home_today_score)
+        if away_today_total_proj is not None and away_today_score is not None:
+            away_today_remaining_proj = max(0.0, away_today_total_proj - away_today_score)
+        # Update today's current scores in daily_avgs if present
         if today_iso in res["daily_avgs"]:
-            if home_current is not None:
-                res["daily_avgs"][today_iso]["team1"] = home_current
-            if away_current is not None:
-                res["daily_avgs"][today_iso]["team2"] = away_current
+            if home_today_score is not None:
+                res["daily_avgs"][today_iso]["team1"] = home_today_score
+            if away_today_score is not None:
+                res["daily_avgs"][today_iso]["team2"] = away_today_score
 
         results_list.append({
             "home_team": home_team.team_name,
@@ -286,6 +298,12 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
             "daily_scores": res["daily_avgs"],
             "home_current_score": home_current,
             "away_current_score": away_current,
+            "home_today_score": home_today_score,
+            "away_today_score": away_today_score,
+            "home_today_remaining_proj": home_today_remaining_proj,
+            "away_today_remaining_proj": away_today_remaining_proj,
+            "home_today_total_proj": home_today_total_proj,
+            "away_today_total_proj": away_today_total_proj,
         })
 
     proj_scores = {}
@@ -295,7 +313,18 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
         proj_scores[m["away_team"]] = m["away_avg"]
         win_probs[m["home_team"]] = m["home_win_prob"]
         win_probs[m["away_team"]] = m["away_win_prob"]
+        print(
+        m["away_team"],
+        "total_proj:", m["away_today_total_proj"],
+        "remaining:", m["away_today_remaining_proj"]
+    )
 
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(away_today_total_proj)
+    print(away_today_remaining_proj)
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     if cached_proj_scores:
         proj_scores = cached_proj_scores
     if cached_win_probs:
@@ -323,7 +352,7 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
             print(f"[run_weekly_matchups] could not write {filename}: {exc}")
     elif save:
         print(f"[run_weekly_matchups] cache file already exists: {cache_file.name}")
-
+    print(result)
     return result
 
 

@@ -342,7 +342,7 @@ def build_fantasy_points_map() -> dict[int, float]:
     Build a dict of ESPN playerId -> current fantasy points from ESPN box scores.
     """
     points_map: dict[int, float] = {}
-    box_scores = league.box_scores(matchup_total=False)
+    box_scores = league.box_scores(matchup_total=True)
 
     for box in box_scores:
         for p in box.home_lineup + box.away_lineup:
