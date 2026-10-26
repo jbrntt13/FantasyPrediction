@@ -1,13 +1,12 @@
 # FantasyPrediction
 
-Backend for live win-probability predictions in an ESPN fantasy basketball
-points league. It samples each player's per-game fantasy history (built from
+Live win-probability predictions for an ESPN fantasy basketball points league.
+The backend samples each player's per-game fantasy history (built from
 `nba_api` box scores and the league's scoring rules) to Monte Carlo simulate
 today's matchups and the full fantasy week, and adjusts in real time while NBA
-games are in progress.
-
-The frontend lives in
-[FantasyPredictionVisuals](https://github.com/jbrntt13/FantasyPredictionVisuals).
+games are in progress. The Expo/React Native web frontend in `frontend/` is
+built into `static/` and served by the same FastAPI process, so there is one
+thing to deploy.
 
 ## Layout
 
@@ -26,6 +25,8 @@ The frontend lives in
 | `demo_mode.py` | Replays a cached week with a fake clock, no network needed |
 | `data/` | Per-season inputs: NBA schedule and player history |
 | `cache/` | Dated `*_projScore.json` and `*_weekly_odds.json` outputs |
+| `frontend/` | Expo web app (odds list, matchup detail, demo toolbar) |
+| `static/` | Built frontend, git-ignored, produced by `npm run build` or the Docker build |
 
 ## Setup
 
@@ -73,16 +74,47 @@ Never commit `.env`. It is git-ignored.
 
 ## Running
 
+### Home server (Docker Compose)
+
+```bash
+git clone https://github.com/jbrntt13/FantasyPrediction && cd FantasyPrediction
+cp .env.example .env            # fill in ESPN_S2 / ESPN_SWID / ESPN_YEAR
+# drop data/scheduleLeagueV2_<season>.json in place (see New season checklist)
+docker compose up -d --build    # builds the frontend and the API in one image
+```
+
+The site is on port 8000. `data/` and `cache/` are bind-mounted so rebuilds
+keep the schedule, history, and odds caches. To update after a push:
+
+```bash
+git pull && docker compose up -d --build
+```
+
+Build the history file from inside the container the first time:
+
+```bash
+docker compose exec fantasy python fetch_fantasy_players_history.py
+```
+
+### Local development
+
+Backend, with auto-reload:
+
 ```bash
 uvicorn api_server:app --reload --port 8000
 ```
 
-Docker:
+Frontend, either served by the backend after a build, or live-reloading
+against it:
 
 ```bash
-docker build -t fantasy-prediction .
-docker run --env-file .env -p 8000:8000 fantasy-prediction
+cd frontend
+npm ci
+npm run build                                               # -> ../static, served at http://localhost:8000/
+EXPO_PUBLIC_API_BASE_URL=http://localhost:8000 npm start    # live reload on its own port
 ```
+
+`npm run typecheck` runs the TypeScript check.
 
 ### Demo mode
 

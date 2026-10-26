@@ -11,3 +11,6 @@ venv/
 .idea/
 .vscode/
 .DS_Store
+
+# Built web frontend (produced by `npm run build` in frontend/)
+static/

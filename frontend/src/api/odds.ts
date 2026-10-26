@@ -35,9 +35,10 @@ export interface OddsResponse {
   demo_speed?: number;
   game_fraction?: number;
 }
-// Switch between prod and local:
-export const API_BASE_URL = "https://fantasyprediction.onrender.com";
-//export const API_BASE_URL = "http://192.168.179.204:8000";
+// The web bundle is served by the FastAPI backend itself, so API calls are
+// relative by default. For local dev with `expo start`, point at the backend:
+//   EXPO_PUBLIC_API_BASE_URL=http://localhost:8000 npx expo start --web
+export const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
 export async function getTodayOdds(): Promise<OddsResponse> {
   const response = await fetch(`${API_BASE_URL}/odds/weekly`);
 

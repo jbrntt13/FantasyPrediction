@@ -1,10 +1,11 @@
 # api_server.py
 
 import os
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 
 import demo_mode
 
@@ -26,8 +27,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static files from ./static
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/health")
@@ -142,6 +141,19 @@ def demo_skip(hours: float = Query(1.0, description="Simulated hours to skip for
     return demo_mode.skip_demo_clock(hours)
 
 
-@app.get("/")
-def index():
-    return FileResponse("static/index.html")
+# ─── Web frontend ──────────────────────────────────────────────────────────────
+# The Expo web build (frontend/, `npm run build`) lands in ./static and is served
+# from the root. Mounted last so the API routes above take precedence.
+
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+if (STATIC_DIR / "index.html").exists():
+    app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="frontend")
+else:
+    @app.get("/")
+    def index():
+        return {
+            "status": "ok",
+            "message": "Frontend not built. Run `npm run build` in frontend/ (or use the Docker image).",
+            "docs": "/docs",
+        }
