@@ -1,113 +1,36 @@
-# NBA Import
+"""
+ESPN fantasy league access plus legacy projection helpers.
+
+The `league` object is the single ESPN connection the rest of the backend
+imports. Credentials and the season come from config.py / environment, never
+from source.
+"""
 from datetime import datetime, timedelta, date
+from typing import List
+
 import scipy.stats as stats
 
-import sys
-from typing import List
+import config
 from nbaTest import fetch_nba_live_games, is_team_playing_on
-from datetime import datetime, timedelta, date
 
-# Add the directory containing the espn_api module to the Python path
-sys.path.append('A:\espn-api\espn-api')
-#This is not an API FROM ESPN, this is an API for Fantasy from SPN
+# This is not an API FROM ESPN, this is an API for Fantasy from ESPN
 from espn_api.basketball import League, Matchup, Player, Team
 
-league = League(league_id=538595081, year=2026,
-                espn_s2='AECrq3n2a056zbwdJi7Cny73%2BlS0gpyt0BzVNowetvcsdgI%2BAZ5d7o90xOhnooEGoPQu95%2BVCj%2Fsdb3EELbdXuLiA1YHzrAonEIP1TLLVlES4KPHh4jdDZ9bcddu4k0sALh7QipurlQVUgJsLc8WT%2BkKpFIacloHpGxbtK%2BVPoowAqPH3YlEpxL2S6Ca9Nqqzml9QvUlNmvYL4iky%2F4G735Mf3yVor3Et%2FGgbrvSwfOfh370S6FV9c5nZZjzcCfpFiZbpZVQdmFpVQsgXipWnn9q0wUapcojXArHPDJyD02YYQ%3D%3D',
-                swid='{F3126586-12DD-4281-9D5B-515865B5FC66}')
-team = league.teams[1]
+if not (config.ESPN_S2 and config.ESPN_SWID):
+    raise RuntimeError(
+        "ESPN_S2 and ESPN_SWID are not set. Copy .env.example to .env and fill in "
+        "your ESPN cookies (see README.md for where to find them)."
+    )
 
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app)
+league = League(
+    league_id=config.ESPN_LEAGUE_ID,
+    year=config.ESPN_YEAR,
+    espn_s2=config.ESPN_S2,
+    swid=config.ESPN_SWID,
+)
 
 standard_point_deviation = 75
 time_decay = 0.5
-
-@app.route("/date")
-def hello_world():
-    box = league.box_scores(matchup_total=False)
-    html = box[0].away_lineup[0]
-
-    test = simplePrediction(615, 621)
-    date = datetime.now().timestamp()
-    print(html)
-    return html
-
-
-
-@app.route("/weeklyblindprojections")
-def weeklyblindprojections():
-    box = league.box_scores(matchup_total=False)
-    projections = []
-    nbaDATA = fetch_nba_live_games()
-
-    for boxscore in box_scores:
-        home_team_name = boxscore.home_team.team_name
-        away_team_name = boxscore.away_team.team_name
-        home_team_projected_points = 0
-        away_team_projected_points = 0
-
-        today = datetime.now().date()
-        days_until_monday = (7 - today.weekday()) % 7  #We should do this outside of the boxscore loop ideally
-        if days_until_monday == 0:
-            days_until_monday = 7
-
-        for i in range(days_until_monday):
-            current_date = today + timedelta(days=i)
-            print(current_date)
-            home_team_projected_points += teamProjectScore(boxscore.home_lineup, boxscore.home_team.team_name, nbaDATA,
-                                                           current_date)
-            away_team_projected_points += teamProjectScore(boxscore.away_lineup, boxscore.away_team.team_name, nbaDATA,
-                                                           current_date)
-            #We're not done yet, we need to add the points already scored today
-        currentBoxScore = league.box_scores()
-        home_team_projected_points += currentBoxScore[0].home_score
-        away_team_projected_points += currentBoxScore[0].away_score
-        chanceHome, chanceAway = simplePrediction(home_team_projected_points, away_team_projected_points)
-
-        projections.append((home_team_name, home_team_projected_points, chanceHome, away_team_name,
-                            away_team_projected_points, chanceAway))
-
-    print(projections)
-    return projections
-
-
-@app.route("/currentodds")
-def currentOdds():
-    box = league.box_scores(matchup_total=False)
-    projections = []
-    nbaDATA = fetch_nba_live_games()
-    for boxscore in box:
-        home_team_name = boxscore.home_team.team_name
-        away_team_name = boxscore.away_team.team_name
-
-        home_team_projected_points, homeFirstGame, homeLastGame = teamProjectScore(boxscore.home_lineup, boxscore.home_team.team_name, nbaDATA, datetime.now().date())
-
-
-        away_team_projected_points, awayFirstGame, awayLastGame = teamProjectScore(boxscore.away_lineup, boxscore.away_team.team_name, nbaDATA,
-                                                      datetime.now().date())
-
-        chanceHome, chanceAway = simplePrediction(home_team_projected_points, away_team_projected_points, homeFirstGame, homeLastGame, awayFirstGame, awayLastGame)
-        print(home_team_name, home_team_projected_points, (chanceHome * 100))
-        print(away_team_name, away_team_projected_points, (chanceAway * 100))
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        projections.append((home_team_name, home_team_projected_points, chanceHome, away_team_name,
-                            away_team_projected_points, chanceAway))
-    #print(projections)
-    return projections
-
-
-@app.route("/testAPI")
-def testAPI():
-    fetch_nba_live_games()
-    return "Hello, World!"
-
-
-
-
 
 def simplePrediction(home_team: int, away_team: int, homeFirstGame: int, homelastGame: int, awayFirstGame: int, awayLastGame: int):
     difference = abs(home_team - away_team)  # difference between the two teams
@@ -170,7 +93,6 @@ def playerAVGPoints(player: Player, team_name: str) -> float:
     # Player not found on that team: treat as 0
     return 0.0
 
-from datetime import datetime
 
 def get_latest_game_points(player: Player):
     """
@@ -467,12 +389,3 @@ def debug_player_raw_by_name(fantasy_team_name: str, player_name: str):
         return
 
     debug_player_raw(target_player)
-
-
-
-box_scores = league.box_scores()
-box_scores2 = league.box_scores(matchup_period=3)
-
-
-if __name__ == "__main__":
-    debug_player_raw_by_name("Sarr Fox 64", "Anthony Davis")

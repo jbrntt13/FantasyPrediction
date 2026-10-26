@@ -1,7 +1,9 @@
 {
   "family": "flask-api-task",
   "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
   "cpu": "256",
   "memory": "512",
   "executionRoleArn": "arn:aws:iam::425140822609:role/ecsTaskExecutionRole",
@@ -12,8 +14,8 @@
       "essential": true,
       "portMappings": [
         {
-          "containerPort": 5000,
-          "hostPort": 5000
+          "containerPort": 8000,
+          "hostPort": 8000
         }
       ]
     }

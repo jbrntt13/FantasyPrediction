@@ -1,0 +1,16 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Built web frontend (produced by `npm run build` in frontend/)
+static/

@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 from datetime import datetime, timedelta, date
+import config
 from fantasy import league  # assumes fantasy.py defines `league = League(...)`
 from NBAintegration import (
     find_nba_player_id,
@@ -11,7 +12,7 @@ from NBAintegration import (
 )
 
 
-def fetch_all_fantasy_players_history(output_path: str):
+def fetch_all_fantasy_players_history(output_path: str | Path = config.HISTORY_PATH):
     season = current_nba_season_str()
     print(f"Using NBA season: {season}")
 
@@ -85,6 +86,7 @@ def fetch_all_fantasy_players_history(output_path: str):
 
     # Write everything to a single JSON file
     out_path = Path(output_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(players_data, indent=2), encoding="utf-8")
     print(f"\nSaved history for {len(players_data)} players → {out_path}")
 
@@ -95,4 +97,4 @@ def fetch_all_fantasy_players_history(output_path: str):
 
 
 if __name__ == "__main__":
-    fetch_all_fantasy_players_history("fantasy_player_history_2025-26.json")
+    fetch_all_fantasy_players_history()

@@ -6,6 +6,7 @@ from datetime import date, timedelta
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
+import config
 from fantasy import league
 from nbaTest import teams_playing_on
 from simulate_matchup import (
@@ -192,9 +193,8 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
     today_dt = datetime.now(tz=ZoneInfo("UTC")).astimezone(LA)
     today_date = today_dt.date()
     week_start, week_end = week_bounds_from_today(today_date)
-    week_start_str = week_start.strftime("%Y-%m-%d")
     # Align cache naming with daily simulate_matchup convention: YYYY-MM-DD_projScore.json
-    cache_file = Path(f"{week_start_str}_weekly_odds.json")
+    cache_file = config.weekly_odds_cache(week_start)
     today_data = run_today_matchups(trials=trials)
     today_proj_scores = today_data.get("proj_scores", {}) if today_data else {}
     today_current_scores = today_data.get("current_scores", {}) if today_data else {}
@@ -343,13 +343,13 @@ def run_weekly_matchups(trials: int = 10000, save: bool = True):
     }
 
     if not cache_file.exists():
-        filename = cache_file.name
         try:
-            with open(filename, "w", encoding="utf-8") as f:
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            with cache_file.open("w", encoding="utf-8") as f:
                 json.dump(result, f, indent=2)
-            print(f"[run_weekly_matchups] saved weekly odds to {filename}")
+            print(f"[run_weekly_matchups] saved weekly odds to {cache_file}")
         except OSError as exc:
-            print(f"[run_weekly_matchups] could not write {filename}: {exc}")
+            print(f"[run_weekly_matchups] could not write {cache_file}: {exc}")
     elif save:
         print(f"[run_weekly_matchups] cache file already exists: {cache_file.name}")
     print(result)

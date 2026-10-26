@@ -3,13 +3,19 @@ import random
 from datetime import date
 from pathlib import Path
 
+import config
 from fantasy import league
 from nbaTest import teams_playing_on
 from live_odds import build_live_state_for_league, simulate_player_tonight_linear
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-def load_history(path="fantasy_player_history_2025-26.json"):
+def load_history(path=None):
+    path = Path(path) if path else config.HISTORY_PATH
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Player history not found at {path}. Run fetch_fantasy_players_history.py first."
+        )
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -126,7 +132,7 @@ def run_today_matchups(trials: int = 20000):
     hist = load_history()
     today = datetime.now(tz=ZoneInfo("UTC")).astimezone(LA)
     date_str = today.date().isoformat()
-    proj_file = Path(f"{date_str}_projScore.json")
+    proj_file = config.proj_score_cache(today.date())
     cached_proj_scores = None
     cached_win_probs = None
     if proj_file.exists():
@@ -196,13 +202,13 @@ def run_today_matchups(trials: int = 20000):
     }
 
     if not is_live:
-        filename = proj_file.name
         try:
-            with open(filename, "w", encoding="utf-8") as f:
+            proj_file.parent.mkdir(parents=True, exist_ok=True)
+            with proj_file.open("w", encoding="utf-8") as f:
                 json.dump(result, f, indent=2)
-            print(f"[run_today_matchups] projected scores saved to {filename}")
+            print(f"[run_today_matchups] projected scores saved to {proj_file}")
         except OSError as exc:
-            print(f"[run_today_matchups] could not write {filename}: {exc}")
+            print(f"[run_today_matchups] could not write {proj_file}: {exc}")
     else:
         print(f"[run_today_matchups] NBA games are live; not saving projections.")
     return result

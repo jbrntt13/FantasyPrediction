@@ -7,6 +7,7 @@ from time import sleep
 
 from zoneinfo import ZoneInfo
 
+import config
 from fantasy import league  # your ESPN league object
 
 # NEW: use nba_api.live scoreboard instead of HTTP APIs
@@ -18,7 +19,7 @@ from nba_api.stats.endpoints import BoxScoreTraditionalV2
 # History loading / distribution
 # -----------------------------
 
-HISTORY_PATH = Path("fantasy_player_history_2025-26.json")
+HISTORY_PATH = config.HISTORY_PATH
 
 
 def load_history(path: Path = HISTORY_PATH) -> Dict[str, Any]:

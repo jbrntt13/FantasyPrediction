@@ -1,0 +1,18 @@
+# Home-server deployment. On the box:
+#   git clone https://github.com/jbrntt13/FantasyPrediction && cd FantasyPrediction
+#   cp .env.example .env   # fill in ESPN_S2 / ESPN_SWID / ESPN_YEAR
+#   docker compose up -d --build
+# Update later with: git pull && docker compose up -d --build
+services:
+  fantasy:
+    build: .
+    container_name: fantasy-prediction
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Keep per-season inputs and the daily/weekly odds caches outside the image
+      # so rebuilds don't lose them.
+      - ./data:/app/data
+      - ./cache:/app/cache
+    restart: unless-stopped

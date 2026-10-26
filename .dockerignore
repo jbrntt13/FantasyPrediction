@@ -1,0 +1,12 @@
+.git
+.env
+.venv
+venv
+__pycache__
+*.pyc
+.idea
+.DS_Store
+frontend/node_modules
+frontend/dist
+frontend/.expo
+static
