@@ -2,7 +2,7 @@
 
 from NBAintegration import find_nba_player_id, build_fantasy_history_for_player
 
-def test_player(name: str, season: str = "2024-25"):
+def test_player(name: str, season: str | None = None):
     nba_id = find_nba_player_id(name)
     if nba_id is None:
         print(f"Could not find NBA ID for '{name}'")
@@ -34,5 +34,5 @@ def test_player(name: str, season: str = "2024-25"):
 
 
 if __name__ == "__main__":
-    test_player("Lauri Markkanen", season="2025-26")
+    test_player("Lauri Markkanen")
 

@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import time
 
+import config
 from fantasy import league
 from NBAintegration import (
     find_nba_player_id,
@@ -13,7 +14,7 @@ from NBAintegration import (
 )
 
 
-HISTORY_PATH = Path("fantasy_player_history_2025-26.json")
+HISTORY_PATH = config.HISTORY_PATH
 RATE_LIMIT_SECONDS = 5
 
 

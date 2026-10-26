@@ -22,6 +22,8 @@ import time
 from datetime import date, timedelta
 from pathlib import Path
 
+import config
+
 
 # ─── Stats helpers ────────────────────────────────────────────────────────────
 
@@ -105,7 +107,7 @@ if DEMO_ENABLED:
         f"  Demo week       : {DEMO_WEEK_START} → {DEMO_WEEK_END}\n"
         f"  Speed           : {DEMO_SPEED}x\n"
         f"  Game window     : {DEMO_GAME_WINDOW}h simulated\n"
-        f"  Expected caches : {DEMO_WEEK_START}_weekly_odds.json + {DEMO_DATE}_projScore.json\n"
+        f"  Expected caches : {config.weekly_odds_cache(DEMO_WEEK_START)} + {config.proj_score_cache(DEMO_DATE)}\n"
     )
 else:
     DEMO_DATE = None
@@ -206,11 +208,11 @@ def _load_json(path: Path) -> dict | None:
 
 
 def _weekly_cache() -> dict | None:
-    return _load_json(Path(f"{DEMO_WEEK_START.isoformat()}_weekly_odds.json"))
+    return _load_json(config.weekly_odds_cache(DEMO_WEEK_START))
 
 
 def _daily_cache() -> dict | None:
-    return _load_json(Path(f"{DEMO_DATE.isoformat()}_projScore.json"))
+    return _load_json(config.proj_score_cache(DEMO_DATE))
 
 
 # ─── run_demo_today ───────────────────────────────────────────────────────────

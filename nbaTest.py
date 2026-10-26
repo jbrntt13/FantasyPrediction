@@ -6,6 +6,8 @@ from typing import Set, Optional, Union
 
 from nba_api.live.nba.endpoints import scoreboard as live_scoreboard
 
+import config
+
 
 team_name_mapping = {
     'ATL': 'Atlanta Hawks', 'BOS': 'Boston Celtics', 'BKN': 'Brooklyn Nets', 'CHA': 'Charlotte Hornets',
@@ -106,11 +108,19 @@ def fetch_nba_live_games() -> dict:
 def fetch_nba_schedule(path: str | None = None) -> dict:
     """
     Load the full NBA schedule from a local JSON file instead of any HTTP API.
-    Default: scheduleLeagueV2.json in the same directory as this file.
+    Default: config.SCHEDULE_PATH (data/scheduleLeagueV2_<season>.json).
+    Download it from https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json
     """
     if path is None:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(base_dir, "scheduleLeagueV2.json")
+        path = config.SCHEDULE_PATH
+
+    path = os.fspath(path)
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"NBA schedule not found at {path}. Download "
+            "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json "
+            f"and save it there (season {config.NBA_SEASON})."
+        )
 
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)

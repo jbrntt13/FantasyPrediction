@@ -8,6 +8,8 @@ from nba_api.stats.endpoints import playergamelog
 import pandas as pd
 from datetime import datetime, timedelta, date
 
+import config
+
 NAME_ALIASES = {
     # Memes or ESPN misspellings
     "Kristaps Perzingus Tingus Pingus": "Kristaps Porzingis",
@@ -17,22 +19,10 @@ NAME_ALIASES = {
 
 def current_nba_season_str() -> str:
     """
-    Return the current NBA season string in 'YYYY-YY' form.
-    Example:
-      - Nov 2025 -> '2025-26'
-      - Mar 2026 -> '2025-26'
-      - Jun 2026 -> '2025-26'
-      - Sep 2026 -> '2025-26' (still offseason, but season '2025-26' is the last)
+    Return the NBA season string in 'YYYY-YY' form for the configured season
+    (derived from ESPN_YEAR in config.py, e.g. 2027 -> '2026-27').
     """
-    today = date.today()
-    year = today.year
-    # NBA season "starts" in Oct; before that, we're still in last season
-    if today.month >= 10:
-        start = year
-    else:
-        start = year - 1
-    end_short = str(start + 1)[-2:]
-    return f"{start}-{end_short}"
+    return config.NBA_SEASON
 
 
 # Scoring weights – your league rules
@@ -197,7 +187,8 @@ def find_nba_player_id(name: str) -> int | None:
 
     return None
 
-def get_nba_game_logs(nba_player_id: int, season: str = "2025-26") -> pd.DataFrame:
+def get_nba_game_logs(nba_player_id: int, season: str | None = None) -> pd.DataFrame:
+    season = season or config.NBA_SEASON
     gl = playergamelog.PlayerGameLog(
         player_id=nba_player_id,
         season=season,
@@ -206,13 +197,12 @@ def get_nba_game_logs(nba_player_id: int, season: str = "2025-26") -> pd.DataFra
     df = gl.get_data_frames()[0]
     df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"], format="%b %d, %Y")
 
-    print(df.columns)  # <-- add this once to inspect
-
     return df
 
 
 
-def build_fantasy_history_for_player(nba_player_id: int, season: str = "2025-26"):
+def build_fantasy_history_for_player(nba_player_id: int, season: str | None = None):
+    season = season or config.NBA_SEASON
     """
     Use nba_api logs + your scoring to build a history of fantasy points.
 
